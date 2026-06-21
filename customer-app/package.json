@@ -28,5 +28,10 @@
     "typescript": "^5",
     "vercel": "^54.14.2",
     "wrangler": "^4.103.0"
+  },
+  "overrides": {
+    "@cloudflare/next-on-pages": {
+      "next": "$next"
+    }
   }
 }
