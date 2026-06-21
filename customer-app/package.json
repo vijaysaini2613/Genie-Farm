@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -H 0.0.0.0 -p 4000",
-    "build": "next build",
+    "build": "node scripts/build.js",
     "start": "next start -p 4000",
     "lint": "eslint"
   },
@@ -16,6 +16,7 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@cloudflare/next-on-pages": "^1.13.16",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -23,6 +24,8 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vercel": "^54.14.2",
+    "wrangler": "^4.103.0"
   }
 }

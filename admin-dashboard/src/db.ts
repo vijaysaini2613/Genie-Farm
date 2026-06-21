@@ -9,48 +9,12 @@ export const supabase = supabaseUrl && supabaseAnonKey
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
 
-// Next.js Local API Base URL (dynamic to support local network mobile testing)
-// We default to port 4000, but will dynamically fall back to port 3000 if 4000 is not available.
-export let API_BASE = import.meta.env?.VITE_API_BASE || 
+// Next.js API Base URL (pointing exclusively to port 4000 in local dev)
+export const API_BASE = import.meta.env?.VITE_API_BASE || 
   (typeof window !== 'undefined'
-    ? `http://${window.location.hostname}:3000/api/db`
-    : 'http://localhost:3000/api/db');
+    ? `http://${window.location.hostname}:4000/api/db`
+    : 'http://localhost:4000/api/db');
 
-if (typeof window !== 'undefined' && !import.meta.env?.VITE_API_BASE) {
-  const probePort = async (port: number): Promise<boolean> => {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 600);
-      const res = await fetch(`http://${window.location.hostname}:${port}/api/db?type=config`, {
-        signal: controller.signal,
-        mode: 'cors'
-      });
-      clearTimeout(timeoutId);
-      return res.ok;
-    } catch (e) {
-      return false;
-    }
-  };
-
-  const autoDetectPort = async () => {
-    // Try 4000 first
-    const isPort4000Active = await probePort(4000);
-    if (isPort4000Active) {
-      API_BASE = `http://${window.location.hostname}:4000/api/db`;
-      return;
-    }
-    // Fallback to 3000
-    const isPort3000Active = await probePort(3000);
-    if (isPort3000Active) {
-      API_BASE = `http://${window.location.hostname}:3000/api/db`;
-    } else {
-      // Default to 3000 if neither is active yet (matching default Next.js local behavior)
-      API_BASE = `http://${window.location.hostname}:3000/api/db`;
-    }
-  };
-
-  autoDetectPort();
-}
 
 export interface Product {
   id: string;
