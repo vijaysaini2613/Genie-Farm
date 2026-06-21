@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# package lockfile (ignored to allow Cloudflare Pages to resolve dependencies dynamically for Linux)
+package-lock.json
