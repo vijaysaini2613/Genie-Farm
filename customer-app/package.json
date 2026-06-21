@@ -31,7 +31,8 @@
   },
   "overrides": {
     "@cloudflare/next-on-pages": {
-      "next": "$next"
+      "next": "$next",
+      "vercel": "$vercel"
     }
   }
 }
