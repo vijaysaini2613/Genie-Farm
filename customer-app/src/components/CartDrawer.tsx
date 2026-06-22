@@ -144,7 +144,7 @@ export default function CartDrawer({
               <div className="bg-green-50/70 border border-green-100 rounded-2xl p-3 flex items-start space-x-2.5">
                 <MapPin size={18} className="text-[#1e7e34] shrink-0 mt-0.5" />
                 <div className="text-xs text-[#1e7e34] font-medium leading-normal">
-                  Delivery scheduled to <span className="font-bold">{deliveryAddressName || 'your selected address'}</span> tomorrow morning between <span className="font-bold">5:00 AM - 8:00 AM</span>.
+                  Delivery scheduled to <span className="font-bold">{deliveryAddressName || 'your selected address'}</span> tomorrow morning between <span className="font-bold">7:00 AM - 9:00 AM</span>.
                 </div>
               </div>
 
@@ -165,9 +165,12 @@ export default function CartDrawer({
                         {product.unit} {product.weight_range}
                       </p>
                       <div className="flex items-center space-x-2 mt-1">
-                        <span className="text-xs font-extrabold text-gray-900">₹{product.price}</span>
+                        <span className="text-xs font-extrabold text-gray-900">₹{product.price * quantity}</span>
+                        {quantity > 1 && (
+                          <span className="text-[10px] text-gray-500 font-medium">(₹{product.price} each)</span>
+                        )}
                         {product.mrp > product.price && (
-                          <span className="text-[10px] text-gray-400 line-through">₹{product.mrp}</span>
+                          <span className="text-[10px] text-gray-400 line-through">₹{product.mrp * quantity}</span>
                         )}
                       </div>
                     </div>

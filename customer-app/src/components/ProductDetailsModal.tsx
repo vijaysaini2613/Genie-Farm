@@ -95,9 +95,18 @@ export default function ProductDetailsModal({
               </p>
 
               <div className="flex items-baseline space-x-2 mt-3">
-                <span className="text-xl font-extrabold text-[#1e7e34]">₹{product.price}</span>
+                <span className="text-xl font-extrabold text-[#1e7e34]">
+                  ₹{quantityInCart > 0 ? product.price * quantityInCart : product.price}
+                </span>
+                {quantityInCart > 1 && (
+                  <span className="text-xs text-gray-500 font-medium">
+                    (₹{product.price} each)
+                  </span>
+                )}
                 {hasDiscount && (
-                  <span className="text-sm text-gray-400 line-through">₹{product.mrp}</span>
+                  <span className="text-sm text-gray-400 line-through">
+                    ₹{quantityInCart > 0 ? product.mrp * quantityInCart : product.mrp}
+                  </span>
                 )}
               </div>
             </div>
@@ -189,7 +198,9 @@ export default function ProductDetailsModal({
               </button>
               <div className="text-center">
                 <span className="text-xs text-gray-500 font-medium">Added to Cart</span>
-                <span className="block text-sm font-bold text-gray-900">{quantityInCart} items</span>
+                <span className="block text-sm font-bold text-gray-900">
+                  {quantityInCart} items (₹{product.price * quantityInCart})
+                </span>
               </div>
               <button
                 onClick={() => onAddToCart(product)}

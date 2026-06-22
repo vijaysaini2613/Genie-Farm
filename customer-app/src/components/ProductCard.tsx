@@ -109,11 +109,16 @@ export default function ProductCard({
           <div className="flex flex-wrap items-baseline gap-1">
             {/* Price badge (Green pill with white text - Zepto Style) */}
             <span className="text-xs font-extrabold bg-[#1e7e34] text-white px-2 py-0.5 rounded-md">
-              ₹{product.price}
+              ₹{quantityInCart > 0 ? product.price * quantityInCart : product.price}
             </span>
+            {quantityInCart > 1 && (
+              <span className="text-[9px] text-gray-500 font-medium">
+                (₹{product.price}/ea)
+              </span>
+            )}
             {hasDiscount && (
               <span className="text-[11px] text-gray-400 line-through">
-                ₹{product.mrp}
+                ₹{quantityInCart > 0 ? product.mrp * quantityInCart : product.mrp}
               </span>
             )}
           </div>
@@ -121,7 +126,7 @@ export default function ProductCard({
           {/* Discount Tag (e.g. ₹12 OFF) */}
           {hasDiscount ? (
             <span className="text-[10px] text-[#1e7e34] font-black block mt-0.5">
-              ₹{discountAmount} OFF
+              ₹{quantityInCart > 0 ? discountAmount * quantityInCart : discountAmount} OFF
             </span>
           ) : (
             <span className="text-[10px] text-transparent select-none block mt-0.5">

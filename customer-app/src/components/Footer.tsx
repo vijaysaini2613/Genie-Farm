@@ -95,7 +95,7 @@ export default function Footer({ billingConfig }: FooterProps) {
                 <span className="text-green-700 font-extrabold">Genie Farm</span> is a consumer brand.
               </p>
               <p className="text-[10px] text-gray-500 font-medium">
-                CIN: U63999DL2024PTC432100
+                GSTIN: 0800EPS1393G1ZC
               </p>
               <div className="text-[10px] text-gray-400 italic leading-relaxed">
                 <p className="font-semibold text-gray-500">Registered Office:</p>

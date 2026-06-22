@@ -336,7 +336,7 @@ export default function AddressModal({
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Vijay Kumar"
+                    placeholder="Enter your name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#1e7e34] focus:border-transparent"

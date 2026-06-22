@@ -55,7 +55,7 @@ export default function LoginView({ onLoginSuccess, onBack }: LoginViewProps) {
             <input
               type="text"
               required
-              placeholder="e.g. Vijay Kumar"
+              placeholder="Enter your name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-sm text-gray-800 font-semibold focus:outline-none focus:ring-1 focus:ring-[#1e7e34] focus:bg-white transition-all"
