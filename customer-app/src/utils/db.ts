@@ -198,6 +198,11 @@ export const dbService = {
 
   // ADDRESSES
   async getAddresses(): Promise<Address[]> {
+    if (supabase) {
+      const { data, error } = await supabase.from('addresses').select('*');
+      if (!error && data) return data as Address[];
+      console.error('Supabase getAddresses error:', error);
+    }
     try {
       const res = await localFetch('/api/db?type=addresses');
       if (!res.ok) throw new Error(`API returned status ${res.status}`);
@@ -208,7 +213,19 @@ export const dbService = {
     }
   },
 
-  async saveAddress(address: Omit<Address, 'id'>): Promise<Address> {
+  async saveAddress(address: Omit<Address, 'id'> & { id?: string }): Promise<Address> {
+    if (supabase) {
+      if (address.is_default) {
+        await supabase.from('addresses').update({ is_default: false }).eq('phone', address.phone);
+      }
+      const newAddr = {
+        ...address,
+        id: address.id || 'addr-' + Date.now(),
+      };
+      const { data, error } = await supabase.from('addresses').upsert(newAddr).select().single();
+      if (!error && data) return data as Address;
+      console.error('Supabase saveAddress error:', error);
+    }
     try {
       const res = await localFetch('/api/db', {
         method: 'POST',
@@ -224,6 +241,11 @@ export const dbService = {
   },
 
   async deleteAddress(addressId: string): Promise<boolean> {
+    if (supabase) {
+      const { error } = await supabase.from('addresses').delete().eq('id', addressId);
+      if (!error) return true;
+      console.error('Supabase deleteAddress error:', error);
+    }
     try {
       const res = await localFetch('/api/db', {
         method: 'POST',
@@ -239,6 +261,11 @@ export const dbService = {
 
   // WALLET
   async getWalletBalance(): Promise<number> {
+    if (supabase) {
+      const { data, error } = await supabase.from('config').select('wallet_balance').eq('id', 1).maybeSingle();
+      if (!error && data) return data.wallet_balance || 0;
+      console.error('Supabase getWalletBalance error:', error);
+    }
     try {
       const res = await localFetch('/api/db?type=wallet');
       if (!res.ok) throw new Error(`API returned status ${res.status}`);
@@ -250,6 +277,14 @@ export const dbService = {
   },
 
   async addWalletMoney(amount: number): Promise<number> {
+    if (supabase) {
+      const { data: config } = await supabase.from('config').select('wallet_balance').eq('id', 1).maybeSingle();
+      const curBal = config?.wallet_balance || 0;
+      const nextBal = curBal + amount;
+      const { error } = await supabase.from('config').update({ wallet_balance: nextBal }).eq('id', 1);
+      if (!error) return nextBal;
+      console.error('Supabase addWalletMoney error:', error);
+    }
     try {
       const res = await localFetch('/api/db', {
         method: 'POST',
@@ -265,6 +300,15 @@ export const dbService = {
   },
 
   async deductWalletMoney(amount: number): Promise<boolean> {
+    if (supabase) {
+      const { data: config } = await supabase.from('config').select('wallet_balance').eq('id', 1).maybeSingle();
+      const curBal = config?.wallet_balance || 0;
+      if (curBal < amount) return false;
+      const nextBal = curBal - amount;
+      const { error } = await supabase.from('config').update({ wallet_balance: nextBal }).eq('id', 1);
+      if (!error) return true;
+      console.error('Supabase deductWalletMoney error:', error);
+    }
     try {
       const res = await localFetch('/api/db', {
         method: 'POST',
@@ -411,6 +455,30 @@ export const dbService = {
 
   // BILLING CONFIGS
   async getBillingConfig(): Promise<BillingConfig> {
+    if (supabase) {
+      const { data, error } = await supabase.from('config').select('*').eq('id', 1).maybeSingle();
+      if (!error && data) {
+        const defaultConfig = {
+          delivery_fee: 15,
+          delivery_free_threshold: 199,
+          platform_fee: 2,
+          gst_fee: 0,
+          delivery_fee_enabled: true,
+          platform_fee_enabled: true,
+          gst_enabled: false,
+          support_email: 'mygeniefarm@gmail.com',
+          support_phone: '+919509122472',
+          support_phone_formatted: '+91 9509122472',
+          delivery_slot: '6 AM - 8 AM',
+          default_city: 'Bhiwadi, Khairthal',
+          admin_username: 'admin',
+          admin_password: 'admin123',
+          admin_name: 'Vijay Manager'
+        };
+        return { ...defaultConfig, ...data } as BillingConfig;
+      }
+      console.error('Supabase getBillingConfig error:', error);
+    }
     try {
       const res = await localFetch('/api/db?type=config');
       if (!res.ok) throw new Error(`API returned status ${res.status}`);
@@ -438,6 +506,11 @@ export const dbService = {
   },
 
   async updateBillingConfig(config: BillingConfig): Promise<BillingConfig> {
+    if (supabase) {
+      const { data, error } = await supabase.from('config').update(config).eq('id', 1).select().single();
+      if (!error && data) return data as BillingConfig;
+      console.error('Supabase updateBillingConfig error:', error);
+    }
     try {
       const res = await localFetch('/api/db', {
         method: 'POST',
@@ -454,6 +527,11 @@ export const dbService = {
 
   // COUPONS
   async getCoupons(): Promise<Coupon[]> {
+    if (supabase) {
+      const { data, error } = await supabase.from('coupons').select('*');
+      if (!error && data) return data as Coupon[];
+      console.error('Supabase getCoupons error:', error);
+    }
     try {
       const res = await localFetch('/api/db?type=coupons');
       if (!res.ok) throw new Error(`API returned status ${res.status}`);
@@ -465,6 +543,15 @@ export const dbService = {
   },
 
   async saveCoupon(coupon: Omit<Coupon, 'id'> & { id?: string }): Promise<boolean> {
+    if (supabase) {
+      const newCoupon = {
+        ...coupon,
+        id: coupon.id || 'cp-' + Date.now(),
+      };
+      const { error } = await supabase.from('coupons').upsert(newCoupon);
+      if (!error) return true;
+      console.error('Supabase saveCoupon error:', error);
+    }
     try {
       const res = await localFetch('/api/db', {
         method: 'POST',
@@ -479,6 +566,11 @@ export const dbService = {
   },
 
   async deleteCoupon(couponId: string): Promise<boolean> {
+    if (supabase) {
+      const { error } = await supabase.from('coupons').delete().eq('id', couponId);
+      if (!error) return true;
+      console.error('Supabase deleteCoupon error:', error);
+    }
     try {
       const res = await localFetch('/api/db', {
         method: 'POST',
@@ -493,6 +585,11 @@ export const dbService = {
   },
 
   async getCategories(): Promise<Category[]> {
+    if (supabase) {
+      const { data, error } = await supabase.from('categories').select('*');
+      if (!error && data) return data as Category[];
+      console.error('Supabase getCategories error:', error);
+    }
     try {
       const res = await localFetch('/api/db?type=categories');
       if (!res.ok) throw new Error(`API returned status ${res.status}`);

@@ -254,10 +254,20 @@ export async function POST(request: Request) {
           }
 
           case 'create_order': {
-            // Server-side strict stock validation
+            // Server-side batch stock validation
+            const productIds = data.items.map((item: any) => item.product_id);
+            const { data: dbProducts, error: dbProductsError } = await supabase
+              .from('products')
+              .select('id, name, stock')
+              .in('id', productIds);
+
+            if (dbProductsError || !dbProducts) {
+              return NextResponse.json({ error: 'Failed to validate product inventory levels.' }, { status: 500, headers: getCorsHeaders() });
+            }
+
             for (const item of data.items) {
-              const { data: p, error } = await supabase.from('products').select('stock, name').eq('id', item.product_id).single();
-              if (error || !p) {
+              const p = dbProducts.find((x: any) => x.id === item.product_id);
+              if (!p) {
                 return NextResponse.json({ error: `Product "${item.product_name}" was not found.` }, { status: 400, headers: getCorsHeaders() });
               }
               if (p.stock < item.quantity) {
@@ -298,14 +308,14 @@ export async function POST(request: Request) {
             const { error: itemsError } = await supabase.from('order_items').insert(itemsToInsert);
             if (itemsError) throw itemsError;
 
-            // Deduct stock levels in Supabase safely
-            for (const item of data.items) {
-              const { data: prod } = await supabase.from('products').select('stock').eq('id', item.product_id).single();
-              if (prod) {
-                const nextStock = Math.max(0, prod.stock - item.quantity);
+            // Deduct stock levels in parallel concurrently
+            await Promise.all(data.items.map(async (item: any) => {
+              const p = dbProducts.find((x: any) => x.id === item.product_id);
+              if (p) {
+                const nextStock = Math.max(0, p.stock - item.quantity);
                 await supabase.from('products').update({ stock: nextStock }).eq('id', item.product_id);
               }
-            }
+            }));
 
             return NextResponse.json({ ...newOrder, items: data.items }, { headers: getCorsHeaders() });
           }
