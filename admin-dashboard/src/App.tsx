@@ -50,6 +50,36 @@ const getAddressAndPhone = (fullAddress: string) => {
   return { address: fullAddress, phone: '' };
 };
 
+const compressImage = (file: File, maxWidth: number, quality: number, callback: (base64: string) => void) => {
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    const img = new (window as any).Image() as HTMLImageElement;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxWidth) {
+        height = Math.round((height * maxWidth) / width);
+        width = maxWidth;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+        callback(compressedBase64);
+      } else {
+        callback(event.target?.result as string);
+      }
+    };
+    img.src = event.target?.result as string;
+  };
+  reader.readAsDataURL(file);
+};
+
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -184,12 +214,14 @@ export default function App() {
 
   const loadPeriodicData = async () => {
     try {
-      const [orderList, prodList] = await Promise.all([
+      const [orderList, prodList, catList] = await Promise.all([
         dbService.getOrders(),
-        dbService.getProducts()
+        dbService.getProducts(),
+        dbService.getCategories()
       ]);
       setOrders(orderList);
       setProducts(prodList);
+      setCategories(catList);
     } catch (e) {
       console.error('Failed to load periodic data:', e);
     }
@@ -1559,9 +1591,7 @@ export default function App() {
                             onChange={(e) => {
                               const file = e.target.files?.[0];
                               if (!file) return;
-                              const reader = new FileReader();
-                              reader.onload = (event) => {
-                                const base64 = event.target?.result as string;
+                              compressImage(file, 800, 0.6, (base64) => {
                                 const updatedBanners = [...currentBanners, base64];
                                 const updatedConfig = {
                                   ...billingConfig,
@@ -1573,8 +1603,7 @@ export default function App() {
                                   console.error(err);
                                   alert('Failed to save banner settings.');
                                 });
-                              };
-                              reader.readAsDataURL(file);
+                              });
                             }}
                             className="hidden"
                           />
@@ -2719,12 +2748,9 @@ export default function App() {
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (!file) return;
-                          const reader = new FileReader();
-                          reader.onload = (event) => {
-                            const base64 = event.target?.result as string;
+                          compressImage(file, 400, 0.6, (base64) => {
                             setCategoryForm({ ...categoryForm, image: base64 });
-                          };
-                          reader.readAsDataURL(file);
+                          });
                         }}
                         className="hidden"
                       />

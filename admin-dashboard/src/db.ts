@@ -336,6 +336,15 @@ export const dbService = {
   },
 
   async getCategories(): Promise<Category[]> {
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('name');
+      if (!error && data) return data as Category[];
+      console.error('Supabase getCategories error:', error);
+    }
+
     try {
       const res = await fetch(`${API_BASE}?type=categories`);
       if (!res.ok) throw new Error(`API returned status ${res.status}`);
