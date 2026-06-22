@@ -332,7 +332,12 @@ export const dbService = {
           order_items (*)
         `)
         .order('created_at', { ascending: false });
-      if (!error && data) return data as Order[];
+      if (!error && data) {
+        return data.map((order: any) => ({
+          ...order,
+          items: order.order_items || []
+        })) as Order[];
+      }
       console.error('Supabase getOrders error:', error);
     }
 
@@ -340,7 +345,11 @@ export const dbService = {
     try {
       const res = await localFetch('/api/db?type=orders');
       if (!res.ok) throw new Error(`API returned status ${res.status}`);
-      return await res.json();
+      const list = await res.json();
+      return list.map((order: any) => ({
+        ...order,
+        items: order.items || order.order_items || []
+      })) as Order[];
     } catch (err) {
       console.warn('API Fallback fetch failed for orders, returning empty list:', err);
       return [];
@@ -349,9 +358,11 @@ export const dbService = {
 
   async createOrder(order: Omit<Order, 'id' | 'created_at'>): Promise<Order> {
     if (supabase) {
+      const orderId = 'order-' + Math.floor(Math.random() * 900000 + 100000);
       const { data, error } = await supabase
         .from('orders')
         .insert([{
+          id: orderId,
           total_amount: order.total_amount,
           discount_amount: order.discount_amount,
           delivery_fee: order.delivery_fee,
@@ -370,7 +381,7 @@ export const dbService = {
 
       if (!error && data) {
         const itemsToInsert = order.items.map(item => ({
-          order_id: data.id,
+          order_id: orderId,
           product_id: item.product_id,
           product_name: item.product_name,
           quantity: item.quantity,
@@ -380,7 +391,7 @@ export const dbService = {
         await supabase.from('order_items').insert(itemsToInsert);
         return {
           ...order,
-          id: data.id,
+          id: orderId,
           created_at: data.created_at,
           items: order.items
         };

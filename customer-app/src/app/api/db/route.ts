@@ -87,7 +87,11 @@ export async function GET(request: Request) {
         case 'orders': {
           const { data, error } = await supabase.from('orders').select('*, order_items(*)').order('created_at', { ascending: false });
           if (error) throw error;
-          return NextResponse.json(data, { headers: getCorsHeaders() });
+          const mapped = data.map((order: any) => ({
+            ...order,
+            items: order.order_items || []
+          }));
+          return NextResponse.json(mapped, { headers: getCorsHeaders() });
         }
         case 'wallet': {
           const { data, error } = await supabase.from('config').select('wallet_balance').eq('id', 1).maybeSingle();

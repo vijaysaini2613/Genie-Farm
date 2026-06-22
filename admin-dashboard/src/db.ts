@@ -181,7 +181,12 @@ export const dbService = {
           order_items (*)
         `)
         .order('created_at', { ascending: false });
-      if (!error && data) return data as Order[];
+      if (!error && data) {
+        return data.map((order: any) => ({
+          ...order,
+          items: order.order_items || []
+        })) as Order[];
+      }
       console.error(error);
     }
 
@@ -189,7 +194,11 @@ export const dbService = {
     try {
       const res = await fetch(`${API_BASE}?type=orders`);
       if (!res.ok) throw new Error(`API returned status ${res.status}`);
-      return await res.json();
+      const list = await res.json();
+      return list.map((order: any) => ({
+        ...order,
+        items: order.items || order.order_items || []
+      })) as Order[];
     } catch (err) {
       console.warn('API Fallback fetch failed for orders, returning empty list:', err);
       return [];
