@@ -357,67 +357,7 @@ export const dbService = {
   },
 
   async createOrder(order: Omit<Order, 'id' | 'created_at'>): Promise<Order> {
-    if (supabase) {
-      const orderId = 'order-' + Math.floor(Math.random() * 900000 + 100000);
-      const { data, error } = await supabase
-        .from('orders')
-        .insert([{
-          id: orderId,
-          total_amount: order.total_amount,
-          discount_amount: order.discount_amount,
-          delivery_fee: order.delivery_fee,
-          platform_fee: order.platform_fee,
-          final_amount: order.final_amount,
-          payment_method: order.payment_method,
-          payment_status: order.payment_status,
-          delivery_address: order.delivery_address,
-          delivery_instructions: order.delivery_instructions,
-          ring_doorbell: order.ring_doorbell,
-          delivery_status: order.delivery_status,
-          delivery_slot: order.delivery_slot
-        }])
-        .select()
-        .single();
-
-      if (!error && data) {
-        const itemsToInsert = order.items.map(item => ({
-          order_id: orderId,
-          product_id: item.product_id,
-          product_name: item.product_name,
-          quantity: item.quantity,
-          price: item.price
-        }));
-
-        await supabase.from('order_items').insert(itemsToInsert);
-
-        // Deduct stock levels in Supabase
-        const productIds = order.items.map(item => item.product_id);
-        const { data: dbProducts } = await supabase
-          .from('products')
-          .select('id, stock')
-          .in('id', productIds);
-
-        if (dbProducts) {
-          await Promise.all(order.items.map(async (item) => {
-            const p = dbProducts.find((x: any) => x.id === item.product_id);
-            if (p) {
-              const nextStock = Math.max(0, p.stock - item.quantity);
-              await supabase.from('products').update({ stock: nextStock }).eq('id', item.product_id);
-            }
-          }));
-        }
-
-        return {
-          ...order,
-          id: orderId,
-          created_at: data.created_at,
-          items: order.items
-        };
-      }
-      console.error('Supabase createOrder error:', error);
-    }
-
-    // API Fallback
+    // ALWAYS call the server-side API for order creation to ensure secure, authorized stock validation and deduction
     try {
       const res = await localFetch('/api/db', {
         method: 'POST',
@@ -430,7 +370,7 @@ export const dbService = {
       }
       return await res.json();
     } catch (err) {
-      console.error('API Fallback createOrder failed:', err);
+      console.error('createOrder failed:', err);
       throw err;
     }
   },
