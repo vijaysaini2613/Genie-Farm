@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "deploy": "npx wrangler pages deploy dist --project-name geniefarm-admin",
     "lint": "eslint .",
     "preview": "vite preview"
   },

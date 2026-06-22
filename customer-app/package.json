@@ -6,6 +6,7 @@
     "dev": "next dev -H 0.0.0.0 -p 4000",
     "build": "node scripts/build.js",
     "vercel-build": "node scripts/build.js",
+    "deploy": "npx wrangler pages deploy .vercel/output/static --project-name geniefarm-customers",
     "start": "next start -p 4000",
     "lint": "eslint"
   },
