@@ -389,6 +389,24 @@ export const dbService = {
         }));
 
         await supabase.from('order_items').insert(itemsToInsert);
+
+        // Deduct stock levels in Supabase
+        const productIds = order.items.map(item => item.product_id);
+        const { data: dbProducts } = await supabase
+          .from('products')
+          .select('id, stock')
+          .in('id', productIds);
+
+        if (dbProducts) {
+          await Promise.all(order.items.map(async (item) => {
+            const p = dbProducts.find((x: any) => x.id === item.product_id);
+            if (p) {
+              const nextStock = Math.max(0, p.stock - item.quantity);
+              await supabase.from('products').update({ stock: nextStock }).eq('id', item.product_id);
+            }
+          }));
+        }
+
         return {
           ...order,
           id: orderId,

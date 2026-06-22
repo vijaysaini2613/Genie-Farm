@@ -184,10 +184,14 @@ export default function App() {
 
   const loadPeriodicData = async () => {
     try {
-      const orderList = await dbService.getOrders();
+      const [orderList, prodList] = await Promise.all([
+        dbService.getOrders(),
+        dbService.getProducts()
+      ]);
       setOrders(orderList);
+      setProducts(prodList);
     } catch (e) {
-      console.error('Failed to load periodic orders:', e);
+      console.error('Failed to load periodic data:', e);
     }
   };
 
@@ -196,7 +200,7 @@ export default function App() {
       loadAllData();
       const interval = setInterval(() => {
         loadPeriodicData();
-      }, 4000);
+      }, 5000);
       return () => clearInterval(interval);
     }
   }, [isLoggedIn]);
