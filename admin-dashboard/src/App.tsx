@@ -504,14 +504,40 @@ export default function App() {
     if (!product) return;
 
     try {
-      const updated = {
-        ...product,
-        is_flash_deal: true,
-        price: flashSaleForm.flash_price,
-        flash_deal_threshold: flashSaleForm.threshold,
-        flash_deal_end_time: flashSaleForm.has_timer && flashSaleForm.expiry_time ? new Date(flashSaleForm.expiry_time).toISOString() : ''
-      };
-      await dbService.updateProduct(updated);
+      if (product.is_flash_deal) {
+        // Update existing flash sale row
+        const updated = {
+          ...product,
+          price: flashSaleForm.flash_price,
+          flash_deal_threshold: flashSaleForm.threshold,
+          flash_deal_end_time: flashSaleForm.has_timer && flashSaleForm.expiry_time ? new Date(flashSaleForm.expiry_time).toISOString() : ''
+        };
+        await dbService.updateProduct(updated);
+      } else {
+        // Create a new standalone flash sale product copy row
+        const newFlashProduct = {
+          name: product.name,
+          category: product.category,
+          sub_category: product.sub_category,
+          mrp: product.mrp,
+          price: flashSaleForm.flash_price,
+          unit: product.unit,
+          weight_range: product.weight_range,
+          stock: product.stock,
+          image_url: product.image_url,
+          description: product.description,
+          benefits: product.benefits,
+          storage_tips: product.storage_tips,
+          shelf_life: product.shelf_life,
+          origin: product.origin,
+          is_flash_deal: true,
+          flash_deal_threshold: flashSaleForm.threshold,
+          flash_deal_end_time: flashSaleForm.has_timer && flashSaleForm.expiry_time ? new Date(flashSaleForm.expiry_time).toISOString() : '',
+          is_available: true
+        };
+        await dbService.addProduct(newFlashProduct);
+      }
+
       setFlashSaleForm({
         product_id: '',
         flash_price: 0,
@@ -528,19 +554,10 @@ export default function App() {
   };
 
   const handleEndFlashSale = async (productId: string) => {
-    const product = products.find(p => p.id === productId);
-    if (!product) return;
     try {
-      const updated = {
-        ...product,
-        is_flash_deal: false,
-        price: product.mrp, // Revert price to MRP
-        flash_deal_threshold: 0,
-        flash_deal_end_time: ''
-      };
-      await dbService.updateProduct(updated);
+      await dbService.deleteProduct(productId);
       loadAllData();
-      alert('Flash sale ended and price reverted to MRP.');
+      alert('Flash sale ended successfully.');
     } catch (err) {
       console.error(err);
       alert('Failed to end flash sale.');
@@ -1107,7 +1124,16 @@ export default function App() {
                               className="w-10 h-10 object-cover rounded-lg bg-gray-50 border border-gray-100"
                             />
                           </td>
-                          <td className="p-4 font-bold text-gray-900">{prod.name}</td>
+                          <td className="p-4 font-bold text-gray-900">
+                            <div className="flex items-center space-x-1.5">
+                              <span>{prod.name}</span>
+                              {prod.is_flash_deal && (
+                                <span className="text-[8px] bg-red-100 text-red-700 font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0">
+                                  Flash Deal
+                                </span>
+                              )}
+                            </div>
+                          </td>
                           <td className="p-4">
                             <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md font-semibold">
                               {prod.category}
@@ -1150,9 +1176,18 @@ export default function App() {
                           <td className="p-4">
                             <button
                               onClick={async () => {
-                                const updated = { ...prod, is_flash_deal: !prod.is_flash_deal, flash_deal_threshold: prod.is_flash_deal ? 0 : 80 };
-                                await dbService.updateProduct(updated);
-                                loadAllData();
+                                if (prod.is_flash_deal) {
+                                  if (window.confirm(`Are you sure you want to end the flash sale for "${prod.name}"? This will delete the flash sale item row.`)) {
+                                    await handleEndFlashSale(prod.id);
+                                  }
+                                } else {
+                                  setFlashSaleForm(prev => ({
+                                    ...prev,
+                                    product_id: prod.id,
+                                    flash_price: prod.price
+                                  }));
+                                  setActiveTab('flash-sales');
+                                }
                               }}
                               className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors ${prod.is_flash_deal
                                   ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
@@ -2096,17 +2131,28 @@ export default function App() {
               <div className="space-y-2">
                 <span className="text-[9px] text-gray-400 font-extrabold uppercase block tracking-wider pl-1">Items Checklist</span>
                 <div className="bg-white border border-gray-100 rounded-2xl divide-y divide-gray-100">
-                  {selectedOrder.items?.map((item) => (
-                    <div key={item.id} className="p-3 flex items-center justify-between text-xs">
-                      <div>
-                        <h4 className="font-bold text-gray-800">{item.product_name}</h4>
-                        <p className="text-[10px] text-gray-400">Price: ₹{item.price}</p>
+                  {selectedOrder.items?.map((item) => {
+                    const prod = products.find(p => p.id === item.product_id);
+                    return (
+                      <div key={item.id} className="p-3 flex items-center justify-between text-xs">
+                        <div>
+                          <h4 className="font-bold text-gray-800">{item.product_name}</h4>
+                          <div className="flex items-center space-x-1.5 mt-0.5 text-[10px] text-gray-400">
+                            <span>Price: ₹{item.price}</span>
+                            {prod && (
+                              <>
+                                <span>•</span>
+                                <span>{prod.unit} {prod.weight_range || ''}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <span className="font-extrabold text-[#1e7e34] bg-green-50 px-3 py-1 rounded-xl">
+                          Qty: {item.quantity}
+                        </span>
                       </div>
-                      <span className="font-extrabold text-[#1e7e34] bg-green-50 px-3 py-1 rounded-xl">
-                        Qty: {item.quantity}
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -2378,40 +2424,7 @@ export default function App() {
                   <span className="font-bold text-gray-700">Available in stock</span>
                 </label>
 
-                <label className="flex items-center space-x-2.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={productForm.is_flash_deal}
-                    onChange={(e) => setProductForm({ ...productForm, is_flash_deal: e.target.checked, flash_deal_threshold: e.target.checked ? 80 : 0 })}
-                    className="w-4 h-4 text-[#1e7e34] focus:ring-[#1e7e34] border-gray-300 rounded"
-                  />
-                  <span className="font-bold text-gray-700">Set as Flash Deal</span>
-                </label>
               </div>
-
-              {productForm.is_flash_deal && (
-                <div className="grid grid-cols-2 gap-4 p-3.5 bg-yellow-50/20 border border-yellow-100/50 rounded-2xl animate-fade-in">
-                  <div className="space-y-1">
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase">Min Purchase Threshold (₹)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={productForm.flash_deal_threshold || 0}
-                      onChange={(e) => setProductForm({ ...productForm, flash_deal_threshold: parseFloat(e.target.value) || 0 })}
-                      className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-800 font-semibold focus:ring-1 focus:ring-[#1e7e34] focus:outline-none"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase">Expiry Time (Ends At)</label>
-                    <input
-                      type="datetime-local"
-                      value={toLocalDatetimeLocal(productForm.flash_deal_end_time)}
-                      onChange={(e) => setProductForm({ ...productForm, flash_deal_end_time: e.target.value ? new Date(e.target.value).toISOString() : '' })}
-                      className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-800 font-semibold focus:ring-1 focus:ring-[#1e7e34] focus:outline-none"
-                    />
-                  </div>
-                </div>
-              )}
             </div>
 
             <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end space-x-3">
@@ -2628,40 +2641,7 @@ export default function App() {
                   <span className="font-bold text-gray-700">Available in stock</span>
                 </label>
 
-                <label className="flex items-center space-x-2.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={selectedProduct.is_flash_deal}
-                    onChange={(e) => setSelectedProduct({ ...selectedProduct, is_flash_deal: e.target.checked })}
-                    className="w-4 h-4 text-[#1e7e34] focus:ring-[#1e7e34] border-gray-300 rounded"
-                  />
-                  <span className="font-bold text-gray-700">Set as Flash Deal</span>
-                </label>
               </div>
-
-              {selectedProduct.is_flash_deal && (
-                <div className="grid grid-cols-2 gap-4 p-3.5 bg-yellow-50/20 border border-yellow-100/50 rounded-2xl animate-fade-in">
-                  <div className="space-y-1">
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase">Min Purchase Threshold (₹)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={selectedProduct.flash_deal_threshold || 0}
-                      onChange={(e) => setSelectedProduct({ ...selectedProduct, flash_deal_threshold: parseFloat(e.target.value) || 0 })}
-                      className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-800 font-semibold focus:ring-1 focus:ring-[#1e7e34] focus:outline-none"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase">Expiry Time (Ends At)</label>
-                    <input
-                      type="datetime-local"
-                      value={toLocalDatetimeLocal(selectedProduct.flash_deal_end_time)}
-                      onChange={(e) => setSelectedProduct({ ...selectedProduct, flash_deal_end_time: e.target.value ? new Date(e.target.value).toISOString() : '' })}
-                      className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-800 font-semibold focus:ring-1 focus:ring-[#1e7e34] focus:outline-none"
-                    />
-                  </div>
-                </div>
-              )}
             </div>
 
             <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end space-x-3">

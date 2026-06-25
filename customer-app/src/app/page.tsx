@@ -864,8 +864,9 @@ export default function Home() {
     return acc + item.product.price * item.quantity;
   }, 0);
 
-  // Filter products by category and search query
+  // Filter products by category and search query (Exclude flash deal items from main catalog)
   const filteredProducts = products.filter((p) => {
+    if (p.is_flash_deal) return false;
     const matchesCategory =
       activeTab === 'home' ||
       selectedCategory === 'All' ||
@@ -1082,7 +1083,7 @@ export default function Home() {
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3.5 mt-4">
                   {products
-                    .filter(p => p.category === selectedCategoryDetail || p.sub_category?.toLowerCase() === selectedCategoryDetail?.toLowerCase())
+                    .filter(p => !p.is_flash_deal && (p.category === selectedCategoryDetail || p.sub_category?.toLowerCase() === selectedCategoryDetail?.toLowerCase()))
                     .map((product) => {
                       const displayProduct = product.is_flash_deal
                         ? { ...product, is_flash_deal: false, price: product.mrp }
