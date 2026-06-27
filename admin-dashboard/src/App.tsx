@@ -661,11 +661,13 @@ export default function App() {
     .reduce((acc, o) => acc + o.final_amount, 0);
   const outOfStockProducts = products.filter(p => p.stock === 0 || !p.is_available);
 
-  // Filter lists
-  const filteredProducts = products.filter(p =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter and sort lists alphabetically by name
+  const filteredProducts = products
+    .filter(p =>
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.category.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const filteredOrders = orders.filter(o =>
     o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
