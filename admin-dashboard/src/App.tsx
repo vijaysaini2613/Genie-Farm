@@ -23,7 +23,8 @@ import {
   Leaf,
   Image,
   PhoneCall,
-  Menu
+  Menu,
+  RefreshCw
 } from 'lucide-react';
 
 const toLocalDatetimeLocal = (dateString?: string) => {
@@ -99,7 +100,7 @@ export default function App() {
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -232,7 +233,7 @@ export default function App() {
       loadAllData();
       const interval = setInterval(() => {
         loadPeriodicData();
-      }, 5000);
+      }, 30000);
       return () => clearInterval(interval);
     }
   }, [isLoggedIn]);
@@ -852,8 +853,21 @@ export default function App() {
             >
               <Menu size={20} />
             </button>
-            <h2 className="text-lg lg:text-xl font-bold text-gray-900 m-0 capitalize">
-              {activeTab.replace('-', ' ')}
+            <h2 className="text-lg lg:text-xl font-bold text-gray-900 m-0 capitalize flex items-center space-x-2">
+              <span>{activeTab.replace('-', ' ')}</span>
+              <button
+                type="button"
+                onClick={async () => {
+                  setLoading(true);
+                  await loadAllData();
+                  setLoading(false);
+                }}
+                disabled={loading}
+                className="p-1 hover:bg-gray-100 text-gray-400 hover:text-green-700 rounded-full transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center shrink-0"
+                title="Refresh Data"
+              >
+                <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+              </button>
             </h2>
           </div>
 

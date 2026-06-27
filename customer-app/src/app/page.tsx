@@ -630,10 +630,8 @@ export default function Home() {
 
     loadDynamicData();
 
-    const interval = setInterval(loadDynamicData, 4000);
     return () => {
       window.alert = originalAlert;
-      clearInterval(interval);
     };
   }, []);
 
