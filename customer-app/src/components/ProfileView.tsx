@@ -46,6 +46,7 @@ export default function ProfileView({
   const [isLoading, setIsLoading] = useState(true);
   const [activeModal, setActiveModal] = useState<'faqs' | 'privacy' | 'terms' | null>(null);
   const [subView, setSubView] = useState<'orders' | 'support' | 'addresses' | 'profile-details' | 'wishlist' | null>(null);
+  const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -135,9 +136,18 @@ export default function ProfileView({
                     {order.items?.map((item) => `${item.product_name} x${item.quantity}`).join(', ')}
                   </div>
 
-                  <div className="flex justify-between items-center text-xs pt-2.5 border-t border-gray-50">
+                  <div className="flex justify-between items-center text-xs pt-2.5 border-t border-gray-55">
                     <span className="text-gray-400 font-medium">Payment: {order.payment_method}</span>
-                    <span className="font-extrabold text-[#1e7e34]">Total Paid: ₹{order.final_amount}</span>
+                    <div className="flex items-center space-x-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setViewingOrder(order)}
+                        className="text-[10px] font-black text-[#1e7e34] bg-green-50 hover:bg-green-100 border border-green-150 px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
+                      >
+                        View Order
+                      </button>
+                      <span className="font-extrabold text-[#1e7e34]">Paid: ₹{order.final_amount}</span>
+                    </div>
                   </div>
                 </div>
               ))
@@ -554,6 +564,112 @@ export default function ProfileView({
                 className="bg-[#1e7e34] hover:bg-[#155a24] text-white font-bold text-xs px-6 py-2.5 rounded-xl transition-all shadow-md active:scale-95"
               >
                 Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* D. VIEW ORDER ITEMS MODAL */}
+      {viewingOrder && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 text-xs text-gray-700">
+          <div onClick={() => setViewingOrder(null)} className="absolute inset-0 bg-black/60 backdrop-blur-xs" />
+          <div className="relative bg-white w-full max-w-sm rounded-3xl shadow-2xl flex flex-col max-h-[80vh] overflow-hidden animate-scale-up border border-gray-100">
+            {/* Modal Header */}
+            <div className="bg-[#1e7e34] text-white px-6 py-4 flex items-center justify-between shadow-sm">
+              <div>
+                <h3 className="text-sm font-extrabold">Order Summary</h3>
+                <p className="text-[10px] text-green-100 font-semibold mt-0.5">ID: #{viewingOrder.id}</p>
+              </div>
+              <button
+                onClick={() => setViewingOrder(null)}
+                className="p-1 hover:bg-white/10 rounded-full text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              {/* Order Info */}
+              <div className="bg-gray-50 rounded-2xl p-3.5 space-y-1.5 border border-gray-100/50">
+                <div className="flex justify-between text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                  <span>Status</span>
+                  <span>Date & Time</span>
+                </div>
+                <div className="flex justify-between items-center text-xs">
+                  <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full ${getStatusColor(viewingOrder.delivery_status)}`}>
+                    {viewingOrder.delivery_status}
+                  </span>
+                  <span className="font-semibold text-gray-800">
+                    {new Date(viewingOrder.created_at).toLocaleString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                </div>
+                <div className="border-t border-gray-200/60 pt-2 text-[10px] font-semibold text-gray-500">
+                  <span className="block"><strong>Delivery Slot:</strong> {viewingOrder.delivery_slot}</span>
+                  <span className="block mt-0.5"><strong>Payment:</strong> {viewingOrder.payment_method} ({viewingOrder.payment_status})</span>
+                </div>
+              </div>
+
+              {/* Items List */}
+              <div className="space-y-2">
+                <span className="text-[9px] text-gray-400 font-extrabold uppercase block tracking-wider pl-1">Items List</span>
+                <div className="bg-white border border-gray-100 rounded-2xl divide-y divide-gray-100 overflow-hidden">
+                  {viewingOrder.items?.map((item) => {
+                    const prod = products.find(p => p.id === item.product_id);
+                    return (
+                      <div key={item.id} className="p-3 flex items-center justify-between text-xs hover:bg-gray-50/20">
+                        <div className="min-w-0 flex-1 pr-3">
+                          <h4 className="font-bold text-gray-850 truncate">{item.product_name}</h4>
+                          <span className="text-[10px] text-gray-400 font-semibold">
+                            ₹{item.price} {prod ? `• ${prod.unit}` : ''}
+                          </span>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className="font-black text-gray-900">₹{(item.price * item.quantity).toFixed(0)}</div>
+                          <div className="text-[9px] text-gray-400 font-bold">Qty: {item.quantity}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Calculation Summary */}
+              <div className="border-t border-gray-100 pt-3 space-y-1.5 text-xs font-semibold text-gray-500">
+                <div className="flex justify-between">
+                  <span>Subtotal</span>
+                  <span>₹{viewingOrder.total_amount}</span>
+                </div>
+                {viewingOrder.discount_amount > 0 && (
+                  <div className="flex justify-between text-rose-500">
+                    <span>Discount Coupon</span>
+                    <span>-₹{viewingOrder.discount_amount}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span>Delivery & Platform Fees</span>
+                  <span>₹{viewingOrder.delivery_fee + viewingOrder.platform_fee}</span>
+                </div>
+                <div className="flex justify-between text-gray-900 font-black text-sm pt-2 border-t border-gray-50">
+                  <span>Amount Paid</span>
+                  <span className="text-[#1e7e34]">₹{viewingOrder.final_amount}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+              <button
+                onClick={() => setViewingOrder(null)}
+                className="bg-[#1e7e34] hover:bg-[#155a24] text-white font-bold text-xs px-6 py-2.5 rounded-xl transition-all shadow-md active:scale-95 animate-fade-in"
+              >
+                Close
               </button>
             </div>
           </div>
