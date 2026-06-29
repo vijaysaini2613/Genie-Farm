@@ -116,7 +116,7 @@ export const dbService = {
 
     // API Fallback
     try {
-      const res = await localFetch('/api/db?type=products');
+      const res = await localFetch(`/api/db?type=products&t=${Date.now()}`);
       if (!res.ok) throw new Error(`API returned status ${res.status}`);
       return await res.json();
     } catch (err) {
@@ -191,7 +191,7 @@ export const dbService = {
 
     // API Fallback
     try {
-      const res = await localFetch('/api/db?type=societies');
+      const res = await localFetch(`/api/db?type=societies&t=${Date.now()}`);
       if (!res.ok) throw new Error(`API returned status ${res.status}`);
       return await res.json();
     } catch (err) {
@@ -208,7 +208,7 @@ export const dbService = {
       console.error('Supabase getAddresses error:', error);
     }
     try {
-      const res = await localFetch('/api/db?type=addresses');
+      const res = await localFetch(`/api/db?type=addresses&t=${Date.now()}`);
       if (!res.ok) throw new Error(`API returned status ${res.status}`);
       return await res.json();
     } catch (err) {
@@ -271,7 +271,7 @@ export const dbService = {
       console.error('Supabase getWalletBalance error:', error);
     }
     try {
-      const res = await localFetch('/api/db?type=wallet');
+      const res = await localFetch(`/api/db?type=wallet&t=${Date.now()}`);
       if (!res.ok) throw new Error(`API returned status ${res.status}`);
       return await res.json();
     } catch (err) {
@@ -347,7 +347,7 @@ export const dbService = {
 
     // API Fallback
     try {
-      const res = await localFetch('/api/db?type=orders');
+      const res = await localFetch(`/api/db?type=orders&t=${Date.now()}`);
       if (!res.ok) throw new Error(`API returned status ${res.status}`);
       const list = await res.json();
       return list.map((order: any) => ({
@@ -453,7 +453,7 @@ export const dbService = {
       console.error('Supabase getBillingConfig error:', error);
     }
     try {
-      const res = await localFetch('/api/db?type=config');
+      const res = await localFetch(`/api/db?type=config&t=${Date.now()}`);
       if (!res.ok) throw new Error(`API returned status ${res.status}`);
       return await res.json();
     } catch (err) {
@@ -506,7 +506,7 @@ export const dbService = {
       console.error('Supabase getCoupons error:', error);
     }
     try {
-      const res = await localFetch('/api/db?type=coupons');
+      const res = await localFetch(`/api/db?type=coupons&t=${Date.now()}`);
       if (!res.ok) throw new Error(`API returned status ${res.status}`);
       return await res.json();
     } catch (err) {
@@ -564,7 +564,7 @@ export const dbService = {
       console.error('Supabase getCategories error:', error);
     }
     try {
-      const res = await localFetch('/api/db?type=categories');
+      const res = await localFetch(`/api/db?type=categories&t=${Date.now()}`);
       if (!res.ok) throw new Error(`API returned status ${res.status}`);
       return await res.json();
     } catch (err) {

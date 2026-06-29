@@ -89,7 +89,7 @@ export const dbService = {
 
     // Local API Fallback
     try {
-      const res = await fetch(`${API_BASE}?type=products`);
+      const res = await fetch(`${API_BASE}?type=products&t=${Date.now()}`);
       if (!res.ok) throw new Error(`API returned status ${res.status}`);
       return await res.json();
     } catch (err) {
@@ -196,7 +196,7 @@ export const dbService = {
 
     // Local API Fallback
     try {
-      const res = await fetch(`${API_BASE}?type=orders`);
+      const res = await fetch(`${API_BASE}?type=orders&t=${Date.now()}`);
       if (!res.ok) throw new Error(`API returned status ${res.status}`);
       const list = await res.json();
       return list.map((order: any) => ({
@@ -259,7 +259,7 @@ export const dbService = {
   // BILLING CONFIGS
   async getBillingConfig(): Promise<BillingConfig> {
     try {
-      const res = await fetch(`${API_BASE}?type=config`);
+      const res = await fetch(`${API_BASE}?type=config&t=${Date.now()}`);
       if (!res.ok) throw new Error(`API returned status ${res.status}`);
       return await res.json();
     } catch (err) {
@@ -302,7 +302,7 @@ export const dbService = {
   // COUPONS
   async getCoupons(): Promise<Coupon[]> {
     try {
-      const res = await fetch(`${API_BASE}?type=coupons`);
+      const res = await fetch(`${API_BASE}?type=coupons&t=${Date.now()}`);
       if (!res.ok) throw new Error(`API returned status ${res.status}`);
       return await res.json();
     } catch (err) {
@@ -350,7 +350,7 @@ export const dbService = {
     }
 
     try {
-      const res = await fetch(`${API_BASE}?type=categories`);
+      const res = await fetch(`${API_BASE}?type=categories&t=${Date.now()}`);
       if (!res.ok) throw new Error(`API returned status ${res.status}`);
       return await res.json();
     } catch (err) {
