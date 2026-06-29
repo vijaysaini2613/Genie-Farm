@@ -54,7 +54,7 @@ let dbPromise: Promise<any> = Promise.resolve();
 
 function runLocked<T>(operation: () => Promise<T> | T): Promise<T> {
   const resultPromise = dbPromise.then(operation);
-  dbPromise = resultPromise.catch(() => {});
+  dbPromise = resultPromise.catch(() => { });
   return resultPromise;
 }
 
@@ -123,8 +123,8 @@ export async function GET(request: Request) {
             platform_fee_enabled: true,
             gst_enabled: false,
             support_email: 'mygeniefarm@gmail.com',
-            support_phone: '+919509122472',
-            support_phone_formatted: '+91 9509122472',
+            support_phone: '+917732997749',
+            support_phone_formatted: '+91 7732997749',
             delivery_slot: '6 AM - 8 AM',
             default_city: 'Bhiwadi, Khairthal',
             admin_username: 'admin',
@@ -184,8 +184,8 @@ export async function GET(request: Request) {
           platform_fee_enabled: true,
           gst_enabled: false,
           support_email: 'mygeniefarm@gmail.com',
-          support_phone: '+919509122472',
-          support_phone_formatted: '+91 9509122472',
+          support_phone: '+917732997749',
+          support_phone_formatted: '+91 7732997749',
           delivery_slot: '6 AM - 8 AM',
           default_city: 'Bhiwadi, Khairthal',
           admin_username: 'admin',

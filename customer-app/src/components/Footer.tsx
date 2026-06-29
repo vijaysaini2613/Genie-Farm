@@ -219,7 +219,7 @@ export default function Footer({ billingConfig }: FooterProps) {
                   </div>
                   <div className="space-y-1">
                     <h4 className="font-extrabold text-gray-950">Q: How can I contact customer support?</h4>
-                    <p className="text-gray-500 leading-relaxed font-semibold">A: Call us directly at {billingConfig.support_phone_formatted || '+91 9509122472'} or email {billingConfig.support_email || 'mygeniefarm@gmail.com'}. We are here to help!</p>
+                    <p className="text-gray-500 leading-relaxed font-semibold">A: Call us directly at {billingConfig.support_phone_formatted || '+91 7732997749'} or email {billingConfig.support_email || 'mygeniefarm@gmail.com'}. We are here to help!</p>
                   </div>
                 </div>
               )}

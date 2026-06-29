@@ -145,7 +145,7 @@ function BannerSlider({ banners }: BannerSliderProps) {
           </div>
         )}
         {banners.length > 2 && (
-          <div 
+          <div
             className="relative w-full rounded-3xl overflow-hidden border border-gray-100 shadow-xs bg-white select-none group/slider"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
@@ -188,9 +188,8 @@ function BannerSlider({ banners }: BannerSliderProps) {
                 <button
                   key={idx}
                   onClick={(e) => { e.stopPropagation(); setCurrentIndex(idx); }}
-                  className={`w-2 h-2 rounded-full transition-all ${
-                    currentIndex === idx ? 'bg-white w-4' : 'bg-white/50'
-                  }`}
+                  className={`w-2 h-2 rounded-full transition-all ${currentIndex === idx ? 'bg-white w-4' : 'bg-white/50'
+                    }`}
                 />
               ))}
             </div>
@@ -209,7 +208,7 @@ function BannerSlider({ banners }: BannerSliderProps) {
             />
           </div>
         ) : (
-          <div 
+          <div
             className="relative w-full rounded-2xl overflow-hidden border border-gray-100 shadow-xs bg-white select-none"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
@@ -235,9 +234,8 @@ function BannerSlider({ banners }: BannerSliderProps) {
                 <button
                   key={idx}
                   onClick={(e) => { e.stopPropagation(); setCurrentIndex(idx); }}
-                  className={`w-1.5 h-1.5 rounded-full transition-all ${
-                    currentIndex === idx ? 'bg-[#1e7e34] w-3.5' : 'bg-gray-300'
-                  }`}
+                  className={`w-1.5 h-1.5 rounded-full transition-all ${currentIndex === idx ? 'bg-[#1e7e34] w-3.5' : 'bg-gray-300'
+                    }`}
                 />
               ))}
             </div>
@@ -453,8 +451,8 @@ export default function Home() {
     platform_fee_enabled: true,
     gst_enabled: false,
     support_email: "mygeniefarm@gmail.com",
-    support_phone: "+919509122472",
-    support_phone_formatted: "+91 9509122472",
+    support_phone: "+917732997749",
+    support_phone_formatted: "+91 7732997749",
     delivery_slot: "6 AM - 8 AM",
     default_city: "Bhiwadi, Khairthal"
   });
@@ -962,7 +960,7 @@ export default function Home() {
       <main ref={mainRef} className="flex-1 overflow-y-auto pb-20 md:pb-6 w-full max-w-[1400px] mx-auto px-2 md:px-8 mt-4">
         {activeTab === 'home' ? (
           <div className="px-1 py-4 space-y-5">
-             {/* Promo Discount Card Banner */}
+            {/* Promo Discount Card Banner */}
             {(() => {
               const rawBanners = billingConfig.discount_banners || (billingConfig.discount_card ? [billingConfig.discount_card] : []);
               const banners = rawBanners.filter(Boolean);

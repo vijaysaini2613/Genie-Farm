@@ -118,7 +118,7 @@ export default function AddressModal({
 
       {/* Modal Content */}
       <div className="relative bg-white w-full max-w-md h-full sm:h-[90vh] sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-fade-in">
-        
+
         {/* Header */}
         <div className="bg-white border-b border-gray-100 px-4 py-4 flex items-center justify-between shrink-0">
           <div className="flex items-center space-x-2">
@@ -168,15 +168,13 @@ export default function AddressModal({
                         onClose();
                       }}
                       type="button"
-                      className={`w-full bg-white border rounded-2xl p-4 flex items-start space-x-3 text-left transition-all hover:shadow-xs relative ${
-                        isActive
+                      className={`w-full bg-white border rounded-2xl p-4 flex items-start space-x-3 text-left transition-all hover:shadow-xs relative ${isActive
                           ? 'border-[#1e7e34] bg-green-50/10'
                           : 'border-gray-100 hover:border-gray-200'
-                      }`}
+                        }`}
                     >
-                      <div className={`p-2 rounded-xl shrink-0 ${
-                        isActive ? 'bg-[#1e7e34]/10 text-[#1e7e34]' : 'bg-gray-50 text-gray-400'
-                      }`}>
+                      <div className={`p-2 rounded-xl shrink-0 ${isActive ? 'bg-[#1e7e34]/10 text-[#1e7e34]' : 'bg-gray-50 text-gray-400'
+                        }`}>
                         <MapPin size={18} />
                       </div>
                       <div className="flex-1 min-w-0 pr-8">
@@ -298,7 +296,7 @@ export default function AddressModal({
           /* STEP 2: ENTER DETAILS FORM */
           <form onSubmit={handleSave} className="flex-1 flex flex-col justify-between overflow-hidden bg-gray-50">
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-              
+
               {/* Selected Society Badge */}
               <div className="bg-white rounded-2xl border border-gray-100 p-3 flex items-start space-x-2.5">
                 <MapPin size={18} className="text-[#1e7e34] shrink-0 mt-0.5" />
@@ -353,7 +351,7 @@ export default function AddressModal({
                     type="tel"
                     required
                     pattern="[0-9]{10}"
-                    placeholder="e.g. 9509122472"
+                    placeholder="e.g. 7732997749"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     className="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#1e7e34] focus:border-transparent"

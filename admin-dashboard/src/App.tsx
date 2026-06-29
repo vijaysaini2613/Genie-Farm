@@ -124,9 +124,9 @@ export default function App() {
     platform_fee_enabled: true,
     gst_enabled: false,
     support_email: "mygeniefarm@gmail.com",
-    support_phone: "+919509122472",
-    support_phone_formatted: "+91 9509122472",
-    delivery_slot: "6 AM - 8 AM",
+    support_phone: "+917732997749",
+    support_phone_formatted: "+91 7732997749",
+    delivery_slot: "8 AM - 10 AM",
     default_city: "Bhiwadi, Khairthal",
     admin_username: "admin",
     admin_password: "admin123",
@@ -756,9 +756,8 @@ export default function App() {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#1e7e34] text-white flex flex-col justify-between shrink-0 shadow-lg transform transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
-          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#1e7e34] text-white flex flex-col justify-between shrink-0 shadow-lg transform transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
       >
         <div>
           {/* Brand header */}
@@ -797,8 +796,8 @@ export default function App() {
                     setIsSidebarOpen(false);
                   }}
                   className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-bold transition-all text-left ${isActive
-                      ? 'bg-white text-green-950 shadow-md'
-                      : 'text-green-100 hover:bg-green-700/40'
+                    ? 'bg-white text-green-950 shadow-md'
+                    : 'text-green-100 hover:bg-green-700/40'
                     }`}
                 >
                   <div className="flex items-center space-x-3">
@@ -1182,8 +1181,8 @@ export default function App() {
                                 loadAllData();
                               }}
                               className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors ${prod.is_available && prod.stock > 0
-                                  ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                  : 'bg-red-100 text-red-700 hover:bg-red-200'
+                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                : 'bg-red-100 text-red-700 hover:bg-red-200'
                                 }`}
                             >
                               {prod.is_available && prod.stock > 0 ? 'Active' : 'Inactive'}
@@ -1206,8 +1205,8 @@ export default function App() {
                                 }
                               }}
                               className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors ${prod.is_flash_deal
-                                  ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                                  : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                                ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                                : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
                                 }`}
                             >
                               {prod.is_flash_deal ? 'Flash' : 'No'}

@@ -183,8 +183,8 @@ export default function ProfileView({
                       onAddressSelect(addr);
                     }}
                     className={`bg-white border p-4 rounded-2xl flex justify-between items-start cursor-pointer transition-all ${isActive
-                        ? 'border-[#1e7e34] shadow-3xs'
-                        : 'border-gray-100 hover:border-gray-200'
+                      ? 'border-[#1e7e34] shadow-3xs'
+                      : 'border-gray-100 hover:border-gray-200'
                       }`}
                   >
                     <div className="min-w-0 flex-1">
@@ -302,7 +302,7 @@ export default function ProfileView({
                 <p className="text-[10px] text-gray-400 mt-0.5">Call our support agent directly</p>
               </div>
               <a
-                href={`tel:${billingConfig.support_phone || '+919509122472'}`}
+                href={`tel:${billingConfig.support_phone || '+917732997749'}`}
                 className="bg-[#1e7e34] hover:bg-green-800 text-white font-extrabold px-4.5 py-2 rounded-xl text-xs flex items-center space-x-1"
               >
                 <PhoneCall size={14} />
@@ -507,7 +507,7 @@ export default function ProfileView({
                   </div>
                   <div className="space-y-1">
                     <h4 className="font-extrabold text-gray-950">Q: How can I contact customer support?</h4>
-                    <p className="text-gray-500 leading-relaxed font-semibold">A: Call us directly at {billingConfig.support_phone_formatted || '+91 9509122472'} or email {billingConfig.support_email || 'mygeniefarm@gmail.com'}. We are here to help!</p>
+                    <p className="text-gray-500 leading-relaxed font-semibold">A: Call us directly at {billingConfig.support_phone_formatted || '+91 7732997749'} or email {billingConfig.support_email || 'mygeniefarm@gmail.com'}. We are here to help!</p>
                   </div>
                 </div>
               )}

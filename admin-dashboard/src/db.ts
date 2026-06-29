@@ -14,7 +14,7 @@ export const supabase = isValidUrl(supabaseUrl) && supabaseAnonKey
   : null;
 
 // Next.js API Base URL (pointing exclusively to port 4000 in local dev)
-export const API_BASE = import.meta.env?.VITE_API_BASE || 
+export const API_BASE = import.meta.env?.VITE_API_BASE ||
   (typeof window !== 'undefined'
     ? `http://${window.location.hostname}:4000/api/db`
     : 'http://localhost:4000/api/db');
@@ -273,8 +273,8 @@ export const dbService = {
         platform_fee_enabled: true,
         gst_enabled: false,
         support_email: 'mygeniefarm@gmail.com',
-        support_phone: '+919509122472',
-        support_phone_formatted: '+91 9509122472',
+        support_phone: '+917732997749',
+        support_phone_formatted: '+91 7732997749',
         delivery_slot: '6 AM - 8 AM',
         default_city: 'Bhiwadi, Khairthal',
         admin_username: 'admin',
