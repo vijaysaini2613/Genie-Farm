@@ -24,11 +24,14 @@ const getDbPath = () => {
 };
 const dbPath = getDbPath();
 
-// Initialize Supabase if credentials are provided
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+const isValidUrl = (url: string) => {
+  return typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'));
+};
+
+const supabase = isValidUrl(supabaseUrl) && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 const readDB = () => {
   try {
