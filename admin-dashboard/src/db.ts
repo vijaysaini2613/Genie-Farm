@@ -1,17 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
+// Always fallback to Next.js proxy API (which uses Service Role Key) to bypass client-side RLS limits
+export const supabase: any = null;
 
-// Get Supabase credentials from environment
-const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env?.VITE_SUPABASE_ANON_KEY || '';
-
-const isValidUrl = (url: string) => {
-  return typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'));
-};
-
-// Initialize real Supabase client if configured
-export const supabase = isValidUrl(supabaseUrl) && supabaseAnonKey
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null;
 
 // Next.js API Base URL (pointing exclusively to port 4000 in local dev)
 export const API_BASE = import.meta.env?.VITE_API_BASE ||

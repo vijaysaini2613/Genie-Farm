@@ -628,8 +628,9 @@ export default function App() {
 
   // Overnight Packing List Calculations
   // Sum item quantities across all orders that are currently "Pending" or "Packing"
+  // Group by product_id so that items like "1/2 kg onion" and "1 kg onion" remain separate items
   const getPackingList = () => {
-    const packingSummary: { [key: string]: { product_name: string; quantity: number; unit: string } } = {};
+    const packingSummary: { [key: string]: { product_name: string; quantity: number; unit: string; product_id: string } } = {};
 
     orders
       .filter(o => o.delivery_status === 'Pending' || o.delivery_status === 'Packing')
@@ -637,10 +638,12 @@ export default function App() {
         order.items?.forEach(item => {
           const product = products.find(p => p.id === item.product_id);
           const unit = product?.unit || 'pcs';
-          if (packingSummary[item.product_name]) {
-            packingSummary[item.product_name].quantity += item.quantity;
+          const key = item.product_id || item.product_name;
+          if (packingSummary[key]) {
+            packingSummary[key].quantity += item.quantity;
           } else {
-            packingSummary[item.product_name] = {
+            packingSummary[key] = {
+              product_id: item.product_id || '',
               product_name: item.product_name,
               quantity: item.quantity,
               unit: unit
@@ -2188,8 +2191,17 @@ export default function App() {
               </div>
             </div>
 
-            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
               <button
+                type="button"
+                onClick={() => window.print()}
+                className="flex items-center space-x-1.5 border border-gray-200 hover:border-[#1e7e34] bg-white hover:bg-[#1e7e34]/5 text-gray-700 hover:text-[#1e7e34] font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-xs cursor-pointer active:scale-95"
+              >
+                <Printer size={14} />
+                <span>Print Receipt</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => setSelectedOrder(null)}
                 className="bg-[#1e7e34] hover:bg-[#155a24] text-white font-bold text-xs px-6 py-2.5 rounded-xl transition-all shadow-md active:scale-95"
               >
@@ -2867,6 +2879,93 @@ export default function App() {
             >
               Okay
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* C. PRINT-ONLY RECEIPT CONTAINER */}
+      {selectedOrder && (
+        <div id="print-section" className="hidden">
+          <div style={{ fontFamily: 'monospace', padding: '20px', color: '#000', backgroundColor: '#fff', maxWidth: '380px', margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: '20px', borderBottom: '2px dashed #000', paddingBottom: '10px' }}>
+              <h1 style={{ fontSize: '20px', margin: '0 0 5px 0', fontWeight: 'bold' }}>GENIE FARM</h1>
+              <p style={{ fontSize: '10px', margin: '0' }}>Fresh Fruits & Vegetables Delivered Daily</p>
+              <p style={{ fontSize: '10px', margin: '3px 0 0 0' }}>Bhiwadi, Rajasthan 301019</p>
+              <p style={{ fontSize: '10px', margin: '0' }}>Support: +91 7732997749 | mygeniefarm@gmail.com</p>
+            </div>
+
+            <div style={{ marginBottom: '15px', fontSize: '12px', lineHeight: '1.4' }}>
+              <p style={{ margin: '0' }}><strong>Order ID:</strong> #{selectedOrder.id}</p>
+              <p style={{ margin: '0' }}><strong>Date:</strong> {new Date(selectedOrder.created_at).toLocaleString()}</p>
+              <p style={{ margin: '0' }}><strong>Delivery Slot:</strong> {selectedOrder.delivery_slot}</p>
+              <p style={{ margin: '0' }}><strong>Payment Method:</strong> {selectedOrder.payment_method} ({selectedOrder.payment_status})</p>
+              <p style={{ margin: '0' }}><strong>Delivery Status:</strong> {selectedOrder.delivery_status}</p>
+            </div>
+
+            <div style={{ marginBottom: '15px', borderBottom: '1px solid #000', paddingBottom: '10px', fontSize: '12px' }}>
+              <h3 style={{ margin: '0 0 5px 0', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}><strong>Customer Details</strong></h3>
+              {(() => {
+                const { address, phone } = getAddressAndPhone(selectedOrder.delivery_address);
+                return (
+                  <>
+                    <p style={{ margin: '0', whiteSpace: 'normal', wordBreak: 'break-all' }}>{address}</p>
+                    {phone && <p style={{ margin: '3px 0 0 0' }}><strong>Phone:</strong> {phone}</p>}
+                  </>
+                );
+              })()}
+              {selectedOrder.delivery_instructions && (
+                <p style={{ margin: '5px 0 0 0', fontStyle: 'italic', fontSize: '11px', color: '#333' }}>
+                  <strong>Instruction:</strong> "{selectedOrder.delivery_instructions}"
+                </p>
+              )}
+            </div>
+
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', marginBottom: '15px' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #000', textAlign: 'left', fontWeight: 'bold' }}>
+                  <th style={{ padding: '5px 0' }}>Item</th>
+                  <th style={{ padding: '5px 0', textAlign: 'center' }}>Qty</th>
+                  <th style={{ padding: '5px 0', textAlign: 'right' }}>Price</th>
+                  <th style={{ padding: '5px 0', textAlign: 'right' }}>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedOrder.items?.map((item) => {
+                  const prod = products.find(p => p.id === item.product_id);
+                  return (
+                    <tr key={item.id} style={{ borderBottom: '1px dashed #eee' }}>
+                      <td style={{ padding: '6px 0' }}>
+                        <div>{item.product_name}</div>
+                        {prod && <div style={{ fontSize: '9px', color: '#555' }}>({prod.unit})</div>}
+                      </td>
+                      <td style={{ padding: '6px 0', textAlign: 'center' }}>{item.quantity}</td>
+                      <td style={{ padding: '6px 0', textAlign: 'right' }}>₹{item.price}</td>
+                      <td style={{ padding: '6px 0', textAlign: 'right' }}>₹{(item.price * item.quantity).toFixed(2)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            <div style={{ width: '100%', float: 'right', maxWidth: '250px', fontSize: '12px', borderTop: '1px solid #000', paddingTop: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                <span>Subtotal:</span>
+                <span>₹{selectedOrder.total_amount.toFixed(2)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                <span>Fees:</span>
+                <span>₹{(selectedOrder.delivery_fee + selectedOrder.platform_fee).toFixed(2)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', borderTop: '1px double #000', paddingTop: '6px', fontSize: '14px' }}>
+                <span>Grand Total:</span>
+                <span>₹{selectedOrder.final_amount.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div style={{ clear: 'both', textAlign: 'center', marginTop: '30px', fontSize: '10px', borderTop: '1px dashed #000', paddingTop: '10px' }}>
+              <p style={{ margin: '0' }}>Thank you for shopping with Genie Farm!</p>
+              <p style={{ margin: '3px 0 0 0' }}>Eat Fresh, Live Healthy</p>
+            </div>
           </div>
         </div>
       )}

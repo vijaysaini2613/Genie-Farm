@@ -22,3 +22,19 @@ body {
   text-align: left !important;
   display: block !important;
 }
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  #print-section, #print-section * {
+    visibility: visible !important;
+  }
+  #print-section {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    display: block !important;
+  }
+}
