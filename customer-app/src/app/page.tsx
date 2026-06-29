@@ -10,7 +10,7 @@ import AddressModal from '../components/AddressModal';
 import CheckoutModal from '../components/CheckoutModal';
 import ProductDetailsModal from '../components/ProductDetailsModal';
 import ProfileView from '../components/ProfileView';
-import { Product, Address, dbService, BillingConfig, Coupon, Category } from '../utils/db';
+import { Product, Address, dbService, BillingConfig, Coupon, Category, supabase } from '../utils/db';
 import LoginView from '../components/LoginView';
 import { ShoppingBag, ArrowRight, Sparkles, Gift, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -635,6 +635,53 @@ export default function Home() {
     };
   }, []);
 
+  // Realtime subscription for auto-refresh on dashboard updates
+  useEffect(() => {
+    if (!supabase) return;
+
+    const channel = supabase
+      .channel('db-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'products' },
+        (payload) => {
+          console.log('Realtime product change detected:', payload);
+          loadDynamicData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'config' },
+        (payload) => {
+          console.log('Realtime config change detected:', payload);
+          loadDynamicData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'coupons' },
+        (payload) => {
+          console.log('Realtime coupons change detected:', payload);
+          loadDynamicData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase?.removeChannel(channel);
+    };
+  }, [supabase]);
+
+  // Refresh data when the user returns/focuses the tab
+  useEffect(() => {
+    const handleFocus = () => {
+      console.log('Window focused, refreshing data...');
+      loadDynamicData();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
+
   // Scroll tracking to hide/show bottom navigation bar and floating cart bar
   useEffect(() => {
     const mainEl = mainRef.current;
@@ -845,6 +892,7 @@ export default function Home() {
     setAppliedCoupon(null); // Clear coupon
     setOrderPlacedSuccess(true);
     setProfileRefreshTrigger((prev) => prev + 1); // Refresh profile orders list
+    loadDynamicData(); // Refresh products and dynamic configuration immediately
   };
 
   const handleOrderSuccess = () => {
@@ -852,6 +900,7 @@ export default function Home() {
     setProfileRefreshTrigger((prev) => prev + 1); // Refresh profile orders list
     setActiveTab('home'); // Switch to home tab
     setOrderPlacedSuccess(false);
+    loadDynamicData(); // Refresh products and dynamic configuration immediately
   };
 
   // Calculations
