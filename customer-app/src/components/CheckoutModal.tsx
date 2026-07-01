@@ -47,11 +47,17 @@ export default function CheckoutModal({
   // Dynamic Bill Calculations
   const subTotal = cartItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
 
+  const targetSubTotal = appliedCoupon?.target_category && appliedCoupon.target_category !== 'All'
+    ? cartItems
+        .filter(item => item.product.category === appliedCoupon.target_category)
+        .reduce((acc, item) => acc + item.product.price * item.quantity, 0)
+    : subTotal;
+
   let discountAmount = 0;
   if (appliedCoupon && subTotal >= appliedCoupon.min_order_value && appliedCoupon.is_active) {
     discountAmount = appliedCoupon.discount_type === 'percentage'
-      ? Math.round(subTotal * (appliedCoupon.discount_value / 100))
-      : appliedCoupon.discount_value;
+      ? Math.round(targetSubTotal * (appliedCoupon.discount_value / 100))
+      : Math.min(targetSubTotal, appliedCoupon.discount_value);
   }
 
   // Re-validate coupon subtotal requirement upon checkout modal open

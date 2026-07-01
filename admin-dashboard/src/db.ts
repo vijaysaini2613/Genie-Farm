@@ -404,5 +404,6 @@ export interface Coupon {
   discount_value: number;
   min_order_value: number;
   is_active: boolean;
+  target_category?: string;
 }
 

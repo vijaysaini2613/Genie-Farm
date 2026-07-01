@@ -114,7 +114,8 @@ create table public.coupons (
   discount_value numeric(10,2) not null,
   min_order_value numeric(10,2) not null default 0.00,
   is_active boolean default true,
-  expires_at timestamp with time zone
+  expires_at timestamp with time zone,
+  target_category text default 'All'
 );
 
 

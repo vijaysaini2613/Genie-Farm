@@ -138,7 +138,8 @@ export default function App() {
     discount_type: 'flat',
     discount_value: 0,
     min_order_value: 0,
-    is_active: true
+    is_active: true,
+    target_category: 'All'
   });
 
   // Flash Sales form state
@@ -607,7 +608,8 @@ export default function App() {
         discount_type: 'flat',
         discount_value: 0,
         min_order_value: 0,
-        is_active: true
+        is_active: true,
+        target_category: 'All'
       });
       const couponList = await dbService.getCoupons();
       setCoupons(couponList);
@@ -1450,7 +1452,7 @@ export default function App() {
                     {couponForm.id && (
                       <button
                         type="button"
-                        onClick={() => setCouponForm({ code: '', discount_type: 'flat', discount_value: 0, min_order_value: 0, is_active: true })}
+                        onClick={() => setCouponForm({ code: '', discount_type: 'flat', discount_value: 0, min_order_value: 0, is_active: true, target_category: 'All' })}
                         className="text-xs font-bold text-red-600 hover:underline"
                       >
                         Cancel Edit
@@ -1511,6 +1513,23 @@ export default function App() {
                       />
                     </div>
 
+                    {/* Target Category */}
+                    <div className="space-y-1 sm:col-span-2">
+                      <label className="block text-[10px] font-bold text-gray-500 uppercase">Target Category (Applies Only to Items in this Category)</label>
+                      <select
+                        value={couponForm.target_category || 'All'}
+                        onChange={(e) => setCouponForm({ ...couponForm, target_category: e.target.value })}
+                        className="w-full bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 font-bold focus:ring-1 focus:ring-[#1e7e34] focus:outline-none px-3 py-2 cursor-pointer"
+                      >
+                        <option value="All">All Categories</option>
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.name}>
+                            {cat.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
                     {/* Active Checkbox */}
                     <div className="col-span-1 sm:col-span-2 flex items-center space-x-2 py-1">
                       <input
@@ -1560,6 +1579,7 @@ export default function App() {
                             </div>
                             <p className="text-[10px] text-gray-500 font-medium">
                               Get {coupon.discount_type === 'percentage' ? `${coupon.discount_value}%` : `₹${coupon.discount_value}`} off on orders above ₹{coupon.min_order_value}
+                              {coupon.target_category && coupon.target_category !== 'All' ? ` (Category: ${coupon.target_category})` : ' (All Categories)'}
                             </p>
                           </div>
 
