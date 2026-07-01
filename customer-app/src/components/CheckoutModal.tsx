@@ -48,9 +48,12 @@ export default function CheckoutModal({
   const subTotal = cartItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
 
   const targetSubTotal = appliedCoupon?.target_category && appliedCoupon.target_category !== 'All'
-    ? cartItems
-        .filter(item => item.product.category === appliedCoupon.target_category)
-        .reduce((acc, item) => acc + item.product.price * item.quantity, 0)
+    ? (() => {
+        const targetCats = appliedCoupon.target_category.split(',').map(s => s.trim().toLowerCase());
+        return cartItems
+          .filter(item => item.product.category && targetCats.includes(item.product.category.toLowerCase()))
+          .reduce((acc, item) => acc + item.product.price * item.quantity, 0);
+      })()
     : subTotal;
 
   let discountAmount = 0;

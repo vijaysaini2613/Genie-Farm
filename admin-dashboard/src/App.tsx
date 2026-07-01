@@ -602,7 +602,11 @@ export default function App() {
   const handleSaveCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await dbService.saveCoupon(couponForm);
+      const success = await dbService.saveCoupon(couponForm);
+      if (!success) {
+        alert('Error: Failed to save coupon in the database. Please make sure you have run the SQL Editor query to add the "target_category" column to the coupons table in Supabase.');
+        return;
+      }
       setCouponForm({
         code: '',
         discount_type: 'flat',
@@ -622,7 +626,11 @@ export default function App() {
 
   const handleDeleteCoupon = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this coupon?')) {
-      await dbService.deleteCoupon(id);
+      const success = await dbService.deleteCoupon(id);
+      if (!success) {
+        alert('Error: Failed to delete coupon. Please check network/database connection.');
+        return;
+      }
       const couponList = await dbService.getCoupons();
       setCoupons(couponList);
     }
@@ -1513,21 +1521,77 @@ export default function App() {
                       />
                     </div>
 
-                    {/* Target Category */}
-                    <div className="space-y-1 sm:col-span-2">
-                      <label className="block text-[10px] font-bold text-gray-500 uppercase">Target Category (Applies Only to Items in this Category)</label>
-                      <select
-                        value={couponForm.target_category || 'All'}
-                        onChange={(e) => setCouponForm({ ...couponForm, target_category: e.target.value })}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 font-bold focus:ring-1 focus:ring-[#1e7e34] focus:outline-none px-3 py-2 cursor-pointer"
-                      >
-                        <option value="All">All Categories</option>
-                        {categories.map((cat) => (
-                          <option key={cat.id} value={cat.name}>
-                            {cat.name}
-                          </option>
-                        ))}
-                      </select>
+                    {/* Target Category Multi-Select Checkboxes */}
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <label className="block text-[10px] font-bold text-gray-500 uppercase">Applicable Categories</label>
+                      <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4.5 space-y-3">
+                        {/* Option: All */}
+                        <div className="flex items-center space-x-2.5">
+                          <input
+                            type="checkbox"
+                            id="cat_all"
+                            checked={!couponForm.target_category || couponForm.target_category === 'All'}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setCouponForm({ ...couponForm, target_category: 'All' });
+                              } else {
+                                setCouponForm({ ...couponForm, target_category: categories[0]?.name || '' });
+                              }
+                            }}
+                            className="w-4 h-4 text-[#1e7e34] focus:ring-[#1e7e34] border-gray-300 rounded cursor-pointer shrink-0"
+                          />
+                          <label htmlFor="cat_all" className="font-extrabold text-gray-800 cursor-pointer select-none">
+                            All Categories
+                          </label>
+                        </div>
+
+                        {/* Divider */}
+                        <div className="border-t border-gray-200/60 my-2" />
+
+                        {/* List of categories */}
+                        <div className="grid grid-cols-2 gap-3.5 pl-1">
+                          {categories.map((cat) => {
+                            const isAllSelected = !couponForm.target_category || couponForm.target_category === 'All';
+                            const parsedSelected = isAllSelected
+                              ? categories.map(c => c.name)
+                              : (couponForm.target_category || '').split(',').map(s => s.trim()).filter(Boolean);
+                            const isChecked = parsedSelected.includes(cat.name);
+
+                            return (
+                              <div key={cat.id} className="flex items-center space-x-2.5">
+                                <input
+                                  type="checkbox"
+                                  id={`cat_${cat.id}`}
+                                  disabled={isAllSelected}
+                                  checked={isChecked}
+                                  onChange={(e) => {
+                                    let currentList = [...parsedSelected];
+                                    if (e.target.checked) {
+                                      if (!currentList.includes(cat.name)) {
+                                        currentList.push(cat.name);
+                                      }
+                                    } else {
+                                      currentList = currentList.filter(name => name !== cat.name);
+                                    }
+                                    const joined = currentList.join(',');
+                                    setCouponForm({
+                                      ...couponForm,
+                                      target_category: joined || 'All'
+                                    });
+                                  }}
+                                  className="w-4 h-4 text-[#1e7e34] focus:ring-[#1e7e34] border-gray-300 rounded cursor-pointer disabled:opacity-40 shrink-0"
+                                />
+                                <label
+                                  htmlFor={`cat_${cat.id}`}
+                                  className={`text-gray-700 cursor-pointer select-none ${isAllSelected ? 'opacity-40 font-bold' : 'font-extrabold'}`}
+                                >
+                                  {cat.name}
+                                </label>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
 
                     {/* Active Checkbox */}
@@ -1579,7 +1643,7 @@ export default function App() {
                             </div>
                             <p className="text-[10px] text-gray-500 font-medium">
                               Get {coupon.discount_type === 'percentage' ? `${coupon.discount_value}%` : `₹${coupon.discount_value}`} off on orders above ₹{coupon.min_order_value}
-                              {coupon.target_category && coupon.target_category !== 'All' ? ` (Category: ${coupon.target_category})` : ' (All Categories)'}
+                              {coupon.target_category && coupon.target_category !== 'All' ? ` (Categories: ${coupon.target_category.split(',').join(', ')})` : ' (All Categories)'}
                             </p>
                           </div>
 
