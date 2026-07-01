@@ -34,6 +34,7 @@ export default function AddressModal({
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [isDefault, setIsDefault] = useState(true);
+  const [isDetecting, setIsDetecting] = useState(false);
 
   // Reset or set step depending on whether saved addresses exist when modal opens
   useEffect(() => {
@@ -83,6 +84,69 @@ export default function AddressModal({
   const handleSelectSociety = (society: Society) => {
     setSelectedSociety(society);
     setStep('details');
+  };
+
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser.');
+      return;
+    }
+
+    setIsDetecting(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          // Fetch reverse geocoded details from OpenStreetMap Nominatim
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+          if (!res.ok) throw new Error('Reverse geocode failed');
+          const data = await res.json();
+
+          const addr = data.address || {};
+          const displayName = data.display_name || '';
+
+          // Determine landmark/street info to prefill landmark details
+          const detectedLandmark = addr.amenity || addr.building || addr.road || addr.suburb || '';
+
+          // Match the detected name against our supported societies list
+          let matched: Society | null = null;
+          for (const s of societies) {
+            const sNameLower = s.name.toLowerCase();
+            if (
+              displayName.toLowerCase().includes(sNameLower) ||
+              (addr.neighbourhood && addr.neighbourhood.toLowerCase().includes(sNameLower)) ||
+              (addr.suburb && addr.suburb.toLowerCase().includes(sNameLower)) ||
+              (addr.estate && addr.estate.toLowerCase().includes(sNameLower))
+            ) {
+              matched = s;
+              break;
+            }
+          }
+
+          if (matched) {
+            setSelectedSociety(matched);
+            if (detectedLandmark) {
+              setFlatNo(detectedLandmark);
+            }
+            setStep('details');
+          } else {
+            alert(`Detected Location: "${detectedLandmark || 'Bhiwadi'}"\n\nThis location is not inside one of our supported societies. Please choose your society manually from the list.`);
+          }
+        } catch (err) {
+          console.error('Failed to fetch reverse geocoding data:', err);
+          alert('Could not determine your address details. Please select your society manually.');
+        } finally {
+          setIsDetecting(false);
+        }
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        alert('Permission denied or failed to retrieve GPS coordinates. Please select your society manually.');
+        setIsDetecting(false);
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -223,17 +287,26 @@ export default function AddressModal({
             {/* Auto-detecting banner */}
             <div className="bg-white px-4 py-3 border-b border-gray-100">
               <div className="bg-[#1e7e34]/5 border border-[#1e7e34]/10 rounded-2xl p-3.5 flex flex-col items-center text-center">
-                <Navigation size={22} className="text-[#1e7e34] animate-bounce mb-1" />
-                <h3 className="text-sm font-bold text-gray-900">Auto-detecting your society</h3>
+                <Navigation size={22} className={`text-[#1e7e34] mb-1 ${isDetecting ? 'animate-spin' : 'animate-bounce'}`} />
+                <h3 className="text-sm font-bold text-gray-950">
+                  {isDetecting ? 'Detecting your location...' : 'Auto-detect your location'}
+                </h3>
                 <p className="text-[10px] text-gray-500 mt-0.5">
-                  We've detected your society based on your current location. Please confirm.
+                  We can fetch your GPS coordinates and match them with the nearest supported society.
                 </p>
                 <button
                   type="button"
-                  onClick={() => handleSelectSociety(societies[3] || societies[0])} // Default mock selection
-                  className="mt-2.5 bg-[#1e7e34] hover:bg-[#155a24] text-white font-bold text-xs px-5 py-2 rounded-xl transition-all shadow-xs"
+                  disabled={isDetecting}
+                  onClick={handleDetectLocation}
+                  className="mt-2.5 bg-[#1e7e34] hover:bg-[#155a24] disabled:bg-gray-400 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all shadow-xs flex items-center justify-center space-x-1.5 cursor-pointer"
                 >
-                  Confirm Current Location
+                  {isDetecting ? (
+                    <>
+                      <span>Please wait...</span>
+                    </>
+                  ) : (
+                    <span>Use My Current Location</span>
+                  )}
                 </button>
               </div>
             </div>
