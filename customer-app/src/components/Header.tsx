@@ -78,7 +78,7 @@ export default function Header({
             }}
             className="flex items-center hover:opacity-90 transition-opacity"
           >
-            <img src="/logo.png" alt="genie farm" className="h-10 w-auto object-contain" />
+            <img src="/logo.png?v=2" alt="genie farm" className="h-10 w-auto object-contain" />
           </button>
 
           {/* Location Selector */}
@@ -196,7 +196,7 @@ export default function Header({
             }}
             className="flex items-center hover:opacity-90 transition-opacity"
           >
-            <img src="/logo.png" alt="genie farm" className="h-10 w-auto object-contain" />
+            <img src="/logo.png?v=2" alt="genie farm" className="h-10 w-auto object-contain" />
           </button>
           
           <button 
