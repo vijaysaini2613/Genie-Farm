@@ -195,7 +195,9 @@ export default function AddressModal({
             }
             setStep('details');
           } else {
-            alert(`Detected Location: "${detectedLandmark || 'Bhiwadi'}"\n\nThis location could not be matched automatically to a supported society. Please choose your society manually from the list.`);
+            const gpsInfo = `lat: ${latitude.toFixed(4)}, lon: ${longitude.toFixed(4)}`;
+            const distanceInfo = closestSociety ? ` (${(minDistance / 1000).toFixed(1)}km from ${closestSociety.name})` : '';
+            alert(`Detected Location: "${detectedLandmark || 'Bhiwadi'}"\nGPS Coordinates: ${gpsInfo}${distanceInfo}\n\nThis location could not be matched automatically to a supported society. Please choose your society manually from the list.`);
           }
         } catch (err) {
           console.error('Failed to fetch reverse geocoding data:', err);
