@@ -112,7 +112,7 @@ export default function AddressModal({
 
           // Predefined coordinates for the supported societies in Bhiwadi
           const SOCIETY_COORDS: { [name: string]: { lat: number; lon: number } } = {
-            'Ashiana Tarang': { lat: 28.2104, lon: 76.8604 },
+            'Ashiana Tarang': { lat: 28.1895, lon: 76.8428 },
             'Ashiana Town': { lat: 28.1657, lon: 76.8146 },
             'Ashiana Advik': { lat: 28.1648, lon: 76.8180 },
             'Ashiana Aangan': { lat: 28.1968, lon: 76.8120 },
@@ -151,9 +151,9 @@ export default function AddressModal({
             }
           }
 
-          // If the closest society is within 2 kilometers (2000 meters), select it!
+          // If the closest society is within 3 kilometers (3000 meters), select it!
           let matched: Society | null = null;
-          if (closestSociety && minDistance <= 2000) {
+          if (closestSociety && minDistance <= 3000) {
             matched = closestSociety;
           } else {
             // 2. Text-based fallback matching if GPS coordinates are further away
