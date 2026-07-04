@@ -425,8 +425,13 @@ export async function POST(request: Request) {
           }
         }
       } catch (err: any) {
-        console.error('Supabase proxy POST error (falling back to JSON):', err.message || err);
-        // Fall through to JSON file fallback if Supabase fails
+        console.error('Supabase proxy POST error:', err.message || err);
+        return NextResponse.json({
+          error: 'Supabase operation failed',
+          details: err.message || err,
+          hint: err.hint || null,
+          code: err.code || null
+        }, { status: 500, headers: getCorsHeaders() });
       }
     }
 
