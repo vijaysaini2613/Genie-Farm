@@ -38,6 +38,31 @@ export default function Header({
   const [isFocused, setIsFocused] = useState(false);
   const [isMobileFocused, setIsMobileFocused] = useState(false);
 
+  // Helper to dynamically calculate delivery slot based on current hour:
+  // Before 5:00 AM -> Today (8 AM - 10 AM)
+  // After 5:00 AM  -> Tomorrow (8 AM - 10 AM)
+  const getDynamicSlotInfo = () => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const isBefore5AM = currentHour < 5;
+    const targetDate = new Date();
+    if (!isBefore5AM) {
+      targetDate.setDate(targetDate.getDate() + 1);
+    }
+    const dayStr = isBefore5AM ? 'Today' : 'Tomorrow';
+    const dateFormatted = targetDate.toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short'
+    });
+    return {
+      dayLabel: dayStr,
+      timeRange: '8 AM - 10 AM',
+      dateStr: dateFormatted
+    };
+  };
+
+  const dynamicSlot = getDynamicSlotInfo();
+
   useEffect(() => {
     const timer = setInterval(() => {
       setPlaceholderIndex((prev) => (prev + 1) % categoriesList.length);
@@ -230,10 +255,10 @@ export default function Header({
           </div>
           <div className="ml-3 shrink-0 border-l border-green-600/40 pl-3 text-right">
             <span className="text-[10px] bg-yellow-400 text-green-950 font-bold px-2 py-0.5 rounded-full inline-block uppercase">
-              Next-Day
+              {dynamicSlot.dayLabel}
             </span>
             <div className="text-[10px] text-green-100 font-semibold mt-0.5 leading-none">
-              {billingConfig.delivery_slot || '6 AM - 8 AM'}
+              {dynamicSlot.timeRange}
             </div>
           </div>
         </button>

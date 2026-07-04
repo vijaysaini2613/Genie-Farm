@@ -47,6 +47,32 @@ export default function CheckoutModal({
   // Dynamic Bill Calculations
   const subTotal = cartItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
 
+  // Dynamic delivery slot helper:
+  // Before 5:00 AM -> Today (8 AM - 10 AM)
+  // After 5:00 AM  -> Tomorrow (8 AM - 10 AM)
+  const getDynamicSlotInfo = () => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const isBefore5AM = currentHour < 5;
+    const targetDate = new Date();
+    if (!isBefore5AM) {
+      targetDate.setDate(targetDate.getDate() + 1);
+    }
+    const dayStr = isBefore5AM ? 'Today' : 'Tomorrow';
+    const dateFormatted = targetDate.toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short'
+    });
+    return {
+      slotText: `${dayStr} (${dateFormatted}) [8 AM - 10 AM]`,
+      dayLabel: dayStr,
+      timeRange: '8 AM - 10 AM',
+      dateStr: dateFormatted
+    };
+  };
+
+  const dynamicSlot = getDynamicSlotInfo();
+
   const targetSubTotal = appliedCoupon?.target_category && appliedCoupon.target_category !== 'All'
     ? (() => {
         const targetCats = appliedCoupon.target_category.split(',').map(s => s.trim().toLowerCase());
@@ -144,7 +170,7 @@ export default function CheckoutModal({
         delivery_instructions: customInstructions,
         ring_doorbell: ringDoorbell,
         delivery_status: 'Pending',
-        delivery_slot: billingConfig.delivery_slot || '6 AM - 8 AM',
+        delivery_slot: dynamicSlot.slotText,
         items: cartItems.map(item => ({
           id: 'item-' + Math.random(),
           product_id: item.product.id,
@@ -206,10 +232,10 @@ export default function CheckoutModal({
             <div className="bg-green-50/70 border border-green-100 rounded-2xl p-4 mt-6 max-w-xs text-left shrink-0">
               <h4 className="text-xs font-bold text-green-900 flex items-center space-x-1.5 mb-1.5">
                 <Truck size={16} />
-                <span>Next-Morning Delivery</span>
+                <span>{dynamicSlot.dayLabel} Delivery</span>
               </h4>
               <p className="text-[11px] text-green-800 leading-relaxed">
-                Your order is confirmed. Our delivery partner will drop it off tomorrow morning between <span className="font-bold">{billingConfig.delivery_slot || '6 AM - 8 AM'}</span>.
+                Your order is confirmed. Our delivery partner will drop it off {dynamicSlot.dayLabel.toLowerCase()} morning ({dynamicSlot.dateStr}) between <span className="font-bold">{dynamicSlot.timeRange}</span>.
               </p>
             </div>
 
@@ -246,7 +272,7 @@ export default function CheckoutModal({
               <div className="bg-green-800 text-white rounded-2xl p-3 flex items-center justify-between shadow-xs">
                 <div className="flex items-center space-x-2.5">
                   <Truck size={20} className="text-yellow-400 shrink-0" />
-                  <span className="text-xs font-bold">Delivery: {billingConfig.delivery_slot || '6 AM - 8 AM'}</span>
+                  <span className="text-xs font-bold">Delivery: {dynamicSlot.dayLabel} ({dynamicSlot.timeRange})</span>
                 </div>
                 <span className="text-[9px] bg-yellow-400 text-green-950 px-2 py-0.5 rounded-md font-bold uppercase">
                   Guaranteed

@@ -505,7 +505,7 @@ export default function ProfileView({
                 <div className="space-y-4 font-semibold">
                   <div className="space-y-1">
                     <h4 className="font-extrabold text-gray-950">Q: How does the delivery work?</h4>
-                    <p className="text-gray-500 leading-relaxed font-semibold">A: We deliver all orders farm-fresh next morning between {billingConfig.delivery_slot || '6 AM - 8 AM'}.</p>
+                    <p className="text-gray-500 leading-relaxed font-semibold">A: We deliver all orders farm-fresh between 8 AM - 10 AM. Orders placed before 5 AM are delivered today; orders placed after 5 AM are delivered tomorrow morning.</p>
                   </div>
                   <div className="space-y-1">
                     <h4 className="font-extrabold text-gray-950">Q: Is there a delivery fee?</h4>
@@ -543,7 +543,7 @@ export default function ProfileView({
                 <div className="space-y-3 font-semibold text-gray-500 leading-relaxed">
                   <p>
                     <strong className="text-gray-950 block mb-0.5">1. Ordering Deadlines</strong>
-                    Orders placed before 10:00 PM are guaranteed for harvesting and delivery early next morning ({billingConfig.delivery_slot || '6 AM - 8 AM'}).
+                    Orders placed before 5:00 AM are delivered same-day today between 8 AM - 10 AM. Orders placed after 5:00 AM are delivered next-day between 8 AM - 10 AM.
                   </p>
                   <p>
                     <strong className="text-gray-950 block mb-0.5">2. Billing Configuration</strong>
