@@ -242,8 +242,12 @@ export async function POST(request: Request) {
             const newProd = {
               ...data,
             };
-            if (newProd.id && String(newProd.id).startsWith('prod-')) {
-              delete newProd.id;
+            if (!newProd.id || String(newProd.id).startsWith('prod-')) {
+              newProd.id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+              });
             }
             const { data: inserted, error } = await supabase.from('products').insert([newProd]).select().single();
             if (error) throw error;
