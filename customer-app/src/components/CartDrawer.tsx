@@ -44,6 +44,31 @@ export default function CartDrawer({
 
   const subTotal = cartItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
 
+  // Helper to dynamically calculate delivery slot based on current hour:
+  // Before 5:00 AM -> Today (8 AM - 10 AM)
+  // After 5:00 AM  -> Tomorrow (8 AM - 10 AM)
+  const getDynamicSlotInfo = () => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const isBefore5AM = currentHour < 5;
+    const targetDate = new Date();
+    if (!isBefore5AM) {
+      targetDate.setDate(targetDate.getDate() + 1);
+    }
+    const dayStr = isBefore5AM ? 'today' : 'tomorrow';
+    const dateFormatted = targetDate.toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short'
+    });
+    return {
+      dayLabel: dayStr,
+      timeRange: '8:00 AM - 10:00 AM',
+      dateStr: dateFormatted
+    };
+  };
+
+  const dynamicSlot = getDynamicSlotInfo();
+
   if (!isOpen) return null;
   
   // Dynamic Fee Computations
@@ -153,7 +178,7 @@ export default function CartDrawer({
               <div className="bg-green-50/70 border border-green-100 rounded-2xl p-3 flex items-start space-x-2.5">
                 <MapPin size={18} className="text-[#1e7e34] shrink-0 mt-0.5" />
                 <div className="text-xs text-[#1e7e34] font-medium leading-normal">
-                  Delivery scheduled to <span className="font-bold">{deliveryAddressName || 'your selected address'}</span> tomorrow morning between <span className="font-bold">7:00 AM - 9:00 AM</span>.
+                  Delivery scheduled to <span className="font-bold">{deliveryAddressName || 'your selected address'}</span> {dynamicSlot.dayLabel} morning ({dynamicSlot.dateStr}) between <span className="font-bold">{dynamicSlot.timeRange}</span>.
                 </div>
               </div>
 
