@@ -264,7 +264,7 @@ export const dbService = {
         support_email: 'mygeniefarm@gmail.com',
         support_phone: '+917732997749',
         support_phone_formatted: '+91 7732997749',
-        delivery_slot: '6 AM - 8 AM',
+        delivery_slot: '8 AM - 10 AM',
         default_city: 'Bhiwadi, Khairthal',
         admin_username: 'admin',
         admin_password: 'admin123',

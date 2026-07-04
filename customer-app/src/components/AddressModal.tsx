@@ -99,7 +99,8 @@ export default function AddressModal({
         const { latitude, longitude } = position.coords;
         try {
           // Fetch reverse geocoded details from OpenStreetMap Nominatim
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+          // Fetch reverse geocoded details from OpenStreetMap Nominatim with building-level zoom and full address details
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`);
           if (!res.ok) throw new Error('Reverse geocode failed');
           const data = await res.json();
 
@@ -107,18 +108,35 @@ export default function AddressModal({
           const displayName = data.display_name || '';
 
           // Determine landmark/street info to prefill landmark details
-          const detectedLandmark = addr.amenity || addr.building || addr.road || addr.suburb || '';
+          const detectedLandmark = addr.building || addr.amenity || addr.road || addr.suburb || '';
 
           // Match the detected name against our supported societies list
           let matched: Society | null = null;
           for (const s of societies) {
             const sNameLower = s.name.toLowerCase();
-            if (
-              displayName.toLowerCase().includes(sNameLower) ||
-              (addr.neighbourhood && addr.neighbourhood.toLowerCase().includes(sNameLower)) ||
-              (addr.suburb && addr.suburb.toLowerCase().includes(sNameLower)) ||
-              (addr.estate && addr.estate.toLowerCase().includes(sNameLower))
-            ) {
+
+            // Check display name first
+            if (displayName.toLowerCase().includes(sNameLower)) {
+              matched = s;
+              break;
+            }
+
+            // Check all values in the address object dynamically
+            let foundInAddr = false;
+            for (const key in addr) {
+              const val = String(addr[key]).toLowerCase();
+              if (val.includes(sNameLower)) {
+                foundInAddr = true;
+                break;
+              }
+              const parts = sNameLower.split(/\s+/).filter(p => p.length > 2);
+              if (parts.length > 0 && parts.every(part => val.includes(part))) {
+                foundInAddr = true;
+                break;
+              }
+            }
+
+            if (foundInAddr) {
               matched = s;
               break;
             }
@@ -131,7 +149,7 @@ export default function AddressModal({
             }
             setStep('details');
           } else {
-            alert(`Detected Location: "${detectedLandmark || 'Bhiwadi'}"\n\nThis location is not inside one of our supported societies. Please choose your society manually from the list.`);
+            alert(`Detected Location: "${detectedLandmark || 'Bhiwadi'}"\n\nThis location could not be matched automatically to a supported society. Please choose your society manually from the list.`);
           }
         } catch (err) {
           console.error('Failed to fetch reverse geocoding data:', err);
