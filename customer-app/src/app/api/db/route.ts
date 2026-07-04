@@ -241,8 +241,10 @@ export async function POST(request: Request) {
           case 'add_product': {
             const newProd = {
               ...data,
-              id: data.id || 'prod-' + Date.now(),
             };
+            if (newProd.id && String(newProd.id).startsWith('prod-')) {
+              delete newProd.id;
+            }
             const { data: inserted, error } = await supabase.from('products').insert([newProd]).select().single();
             if (error) throw error;
             return NextResponse.json(inserted, { headers: getCorsHeaders() });
