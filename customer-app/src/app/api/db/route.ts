@@ -249,13 +249,20 @@ export async function POST(request: Request) {
                 return v.toString(16);
               });
             }
+            if (newProd.flash_deal_end_time === '') {
+              newProd.flash_deal_end_time = null;
+            }
             const { data: inserted, error } = await supabase.from('products').insert([newProd]).select().single();
             if (error) throw error;
             return NextResponse.json(inserted, { headers: getCorsHeaders() });
           }
 
           case 'update_product': {
-            const { data: updated, error } = await supabase.from('products').update(data).eq('id', data.id).select().single();
+            const updateData = { ...data };
+            if (updateData.flash_deal_end_time === '') {
+              updateData.flash_deal_end_time = null;
+            }
+            const { data: updated, error } = await supabase.from('products').update(updateData).eq('id', updateData.id).select().single();
             if (error) throw error;
             return NextResponse.json(updated, { headers: getCorsHeaders() });
           }
