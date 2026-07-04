@@ -100,6 +100,7 @@ create table public.products (
   
   is_flash_deal boolean default false,
   flash_deal_threshold numeric(10,2) default 0.00, -- "Shop for ₹X more to claim"
+  flash_deal_end_time text,
   
   is_available boolean default true,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
