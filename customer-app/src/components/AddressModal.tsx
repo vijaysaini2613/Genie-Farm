@@ -110,41 +110,87 @@ export default function AddressModal({
           // Determine landmark/street info to prefill landmark details
           const detectedLandmark = addr.building || addr.amenity || addr.road || addr.suburb || '';
 
-          // Match the detected name against our supported societies list
-          let matched: Society | null = null;
+          // Predefined coordinates for the supported societies in Bhiwadi
+          const SOCIETY_COORDS: { [name: string]: { lat: number; lon: number } } = {
+            'Ashiana Tarang': { lat: 28.2104, lon: 76.8604 },
+            'Ashiana Town': { lat: 28.1657, lon: 76.8146 },
+            'Ashiana Advik': { lat: 28.1648, lon: 76.8180 },
+            'Ashiana Aangan': { lat: 28.1968, lon: 76.8120 },
+            'Cosmos Greens': { lat: 28.2045, lon: 76.8205 },
+            'Terra Castle': { lat: 28.1360, lon: 76.8320 },
+            'Satyam Green': { lat: 28.1162, lon: 76.7351 }
+          };
+
+          // Helper to calculate Haversine distance in meters
+          const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+            const R = 6371e3; // Earth radius in meters
+            const phi1 = lat1 * Math.PI / 180;
+            const phi2 = lat2 * Math.PI / 180;
+            const deltaPhi = (lat2 - lat1) * Math.PI / 180;
+            const deltaLambda = (lon2 - lon1) * Math.PI / 180;
+
+            const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+                      Math.cos(phi1) * Math.cos(phi2) *
+                      Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+          };
+
+          // 1. Distance-based matching (Highly reliable fallback for missing OpenStreetMap label data)
+          let closestSociety: Society | null = null;
+          let minDistance = Infinity;
+
           for (const s of societies) {
-            const sNameLower = s.name.toLowerCase();
-
-            // Check display name first
-            if (displayName.toLowerCase().includes(sNameLower)) {
-              matched = s;
-              break;
-            }
-
-            // Check all values in the address object dynamically
-            let foundInAddr = false;
-            for (const key in addr) {
-              const val = String(addr[key]).toLowerCase();
-              if (val.includes(sNameLower)) {
-                foundInAddr = true;
-                break;
-              }
-              const parts = sNameLower.split(/\s+/).filter(p => p.length > 2);
-              if (parts.length > 0 && parts.every(part => val.includes(part))) {
-                foundInAddr = true;
-                break;
+            const coords = SOCIETY_COORDS[s.name];
+            if (coords) {
+              const dist = getDistance(latitude, longitude, coords.lat, coords.lon);
+              if (dist < minDistance) {
+                minDistance = dist;
+                closestSociety = s;
               }
             }
+          }
 
-            if (foundInAddr) {
-              matched = s;
-              break;
+          // If the closest society is within 2 kilometers (2000 meters), select it!
+          let matched: Society | null = null;
+          if (closestSociety && minDistance <= 2000) {
+            matched = closestSociety;
+          } else {
+            // 2. Text-based fallback matching if GPS coordinates are further away
+            for (const s of societies) {
+              const sNameLower = s.name.toLowerCase();
+
+              // Check display name first
+              if (displayName.toLowerCase().includes(sNameLower)) {
+                matched = s;
+                break;
+              }
+
+              // Check all values in the address object dynamically
+              let foundInAddr = false;
+              for (const key in addr) {
+                const val = String(addr[key]).toLowerCase();
+                if (val.includes(sNameLower)) {
+                  foundInAddr = true;
+                  break;
+                }
+                const parts = sNameLower.split(/\s+/).filter(p => p.length > 2);
+                if (parts.length > 0 && parts.every(part => val.includes(part))) {
+                  foundInAddr = true;
+                  break;
+                }
+              }
+
+              if (foundInAddr) {
+                matched = s;
+                break;
+              }
             }
           }
 
           if (matched) {
             setSelectedSociety(matched);
-            if (detectedLandmark) {
+            if (detectedLandmark && detectedLandmark.toLowerCase() !== 'bhiwadi') {
               setFlatNo(detectedLandmark);
             }
             setStep('details');
