@@ -18,6 +18,7 @@ interface CheckoutModalProps {
   setAppliedCoupon: (coupon: Coupon | null) => void;
   currentUser: { name: string; phone: string } | null;
   onLoginTrigger: (user: { name: string; phone: string }) => void;
+  editingOrder?: any;
 }
 
 export default function CheckoutModal({
@@ -33,6 +34,7 @@ export default function CheckoutModal({
   setAppliedCoupon,
   currentUser,
   onLoginTrigger,
+  editingOrder,
 }: CheckoutModalProps) {
   const [paymentMethod, setPaymentMethod] = useState<'UPI' | 'COD'>('COD');
   const [ringDoorbell, setRingDoorbell] = useState(true);
@@ -158,27 +160,41 @@ export default function CheckoutModal({
       const userPhone = currentUser ? currentUser.phone : activeAddress.phone;
       const formattedAddress = `${activeAddress.name}, ${activeAddress.flat_house_no}, ${activeAddress.society_name}, ${cityStr}${pinStr} - ${userPhone}`;
 
-      const created = await dbService.createOrder({
-        total_amount: subTotal,
-        discount_amount: discountAmount,
-        delivery_fee: deliveryFee,
-        platform_fee: platformFee,
-        final_amount: finalAmount,
-        payment_method: paymentMethod,
-        payment_status: paymentMethod === 'COD' ? 'Pending' : 'Completed',
-        delivery_address: formattedAddress,
-        delivery_instructions: customInstructions,
-        ring_doorbell: ringDoorbell,
-        delivery_status: 'Pending',
-        delivery_slot: dynamicSlot.slotText,
-        items: cartItems.map(item => ({
-          id: 'item-' + Math.random(),
-          product_id: item.product.id,
-          product_name: item.product.name,
-          quantity: item.quantity,
-          price: item.product.price,
-        })),
-      });
+      const created = editingOrder
+        ? await dbService.updateOrder(editingOrder.id, {
+            items: cartItems.map(item => ({
+              product_id: item.product.id,
+              product_name: item.product.name,
+              quantity: item.quantity,
+              price: item.product.price,
+            })),
+            total_amount: subTotal,
+            discount_amount: discountAmount,
+            delivery_fee: deliveryFee,
+            platform_fee: platformFee,
+            final_amount: finalAmount,
+          }).then(() => ({ id: editingOrder.id }))
+        : await dbService.createOrder({
+            total_amount: subTotal,
+            discount_amount: discountAmount,
+            delivery_fee: deliveryFee,
+            platform_fee: platformFee,
+            final_amount: finalAmount,
+            payment_method: paymentMethod,
+            payment_status: paymentMethod === 'COD' ? 'Pending' : 'Completed',
+            delivery_address: formattedAddress,
+            delivery_instructions: customInstructions,
+            ring_doorbell: ringDoorbell,
+            delivery_status: 'Pending',
+            delivery_slot: dynamicSlot.slotText,
+            items: cartItems.map(item => ({
+              id: 'item-' + Math.random(),
+              product_id: item.product.id,
+              product_name: item.product.name,
+              quantity: item.quantity,
+              price: item.product.price,
+            })),
+          });
 
       setPlacedItems([...cartItems]);
       setPlacedAmount(finalAmount);
@@ -226,7 +242,9 @@ export default function CheckoutModal({
             <div className="w-20 h-20 bg-green-50 text-[#1e7e34] rounded-full flex items-center justify-center mb-6 animate-bounce shrink-0">
               <CheckCircle2 size={56} className="stroke-[2px]" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 shrink-0">Order Placed Successfully!</h3>
+            <h3 className="text-xl font-bold text-gray-900 shrink-0">
+              {editingOrder ? 'Order Updated Successfully!' : 'Order Placed Successfully!'}
+            </h3>
             <p className="text-sm text-[#1e7e34] font-semibold mt-1 shrink-0">Order ID: #{orderSuccessId}</p>
             
             <div className="bg-green-50/70 border border-green-100 rounded-2xl p-4 mt-6 max-w-xs text-left shrink-0">
@@ -322,7 +340,7 @@ export default function CheckoutModal({
                   Payment Options
                 </span>
 
-                {/* Cash on Delivery */}
+                {/* Cash on Delivery or WALLET / UPI depending on order mode */}
                 <div
                   className="w-full flex items-center justify-between p-3 rounded-2xl border border-[#1e7e34] bg-green-50/20"
                 >
@@ -331,8 +349,12 @@ export default function CheckoutModal({
                       <Truck size={18} />
                     </div>
                     <div className="text-left">
-                      <h4 className="text-xs font-bold text-gray-800">Cash on Delivery (COD)</h4>
-                      <p className="text-[9px] text-gray-400">Pay cash or UPI at delivery time</p>
+                      <h4 className="text-xs font-bold text-gray-800">
+                        {editingOrder ? `${editingOrder.payment_method} (Locked)` : 'Cash on Delivery (COD)'}
+                      </h4>
+                      <p className="text-[9px] text-gray-400">
+                        {editingOrder ? 'Original payment method will be preserved' : 'Pay cash or UPI at delivery time'}
+                      </p>
                     </div>
                   </div>
                   <div className="w-4 h-4 rounded-full border border-[#1e7e34] flex items-center justify-center shrink-0">
@@ -439,7 +461,7 @@ export default function CheckoutModal({
                 </div>
                 <div className="flex items-center space-x-1">
                   <span className="text-sm font-bold">
-                    {isPlacingOrder ? 'Processing...' : paymentMethod === 'COD' ? 'Place COD Order' : 'Pay & Confirm'}
+                    {isPlacingOrder ? 'Processing...' : editingOrder ? 'Confirm Update' : paymentMethod === 'COD' ? 'Place COD Order' : 'Pay & Confirm'}
                   </span>
                   <ArrowRight size={16} />
                 </div>

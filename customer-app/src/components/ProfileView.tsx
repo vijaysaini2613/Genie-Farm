@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { User, Phone, ShoppingBag, LogOut, PhoneCall, HelpCircle, ShieldAlert, FileText, X, ChevronLeft, ChevronRight, MapPin, Headset, Heart } from 'lucide-react';
+import { User, Phone, ShoppingBag, LogOut, PhoneCall, HelpCircle, ShieldAlert, FileText, X, ChevronLeft, ChevronRight, MapPin, Headset, Heart, Trash2, Plus, Minus, Search } from 'lucide-react';
 import { Order, Address, BillingConfig, dbService, Product } from '../utils/db';
 import ProductCard from './ProductCard';
 
@@ -22,6 +22,7 @@ interface ProfileViewProps {
   cart: { product: Product; quantity: number }[];
   onAddToCart: (p: Product) => void;
   onRemoveFromCart: (id: string, isFlash?: boolean) => void;
+  onModifyOrder?: (order: Order) => void;
 }
 
 export default function ProfileView({
@@ -41,12 +42,89 @@ export default function ProfileView({
   cart,
   onAddToCart,
   onRemoveFromCart,
+  onModifyOrder,
 }: ProfileViewProps) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeModal, setActiveModal] = useState<'faqs' | 'privacy' | 'terms' | null>(null);
   const [subView, setSubView] = useState<'orders' | 'support' | 'addresses' | 'profile-details' | 'wishlist' | null>(null);
   const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
+
+  // Order self-editing states
+  const [isEditingOrder, setIsEditingOrder] = useState(false);
+  const [editingItems, setEditingItems] = useState<{
+    product_id: string;
+    product_name: string;
+    quantity: number;
+    price: number;
+  }[]>([]);
+  const [productSearchQuery, setProductSearchQuery] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // Checks if the order is editable (Pending/Packing status, and before 12:00 AM midnight of the day it was placed)
+  const isOrderEditable = (order: Order) => {
+    if (order.delivery_status === 'Cancelled' || order.delivery_status === 'Delivered') {
+      return false;
+    }
+    const createdDate = new Date(order.created_at);
+    const now = new Date();
+    
+    // Set deadline to midnight of the day following order creation date (00:00:00 local time)
+    const deadline = new Date(createdDate);
+    deadline.setDate(deadline.getDate() + 1);
+    deadline.setHours(0, 0, 0, 0);
+    
+    return now < deadline;
+  };
+
+  const handleSaveChanges = async () => {
+    if (!viewingOrder) return;
+    if (editingItems.length === 0) {
+      setErrorMessage('Order must contain at least 1 item.');
+      return;
+    }
+    
+    setIsSaving(true);
+    setErrorMessage('');
+    
+    // Recalculate values to send to backend
+    const subTotal = editingItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const deliveryFee = billingConfig.delivery_fee_enabled 
+      ? (subTotal >= (billingConfig.delivery_free_threshold || 199) || subTotal === 0 ? 0 : (billingConfig.delivery_fee || 15))
+      : 0;
+    const platformFee = billingConfig.platform_fee_enabled && subTotal > 0 
+      ? (billingConfig.platform_fee || 2) 
+      : 0;
+    const discountAmount = Math.min(viewingOrder.discount_amount || 0, subTotal);
+    const finalAmount = subTotal - discountAmount + deliveryFee + platformFee;
+
+    try {
+      const success = await dbService.updateOrder(viewingOrder.id, {
+        items: editingItems,
+        total_amount: subTotal,
+        discount_amount: discountAmount,
+        delivery_fee: deliveryFee,
+        platform_fee: platformFee,
+        final_amount: finalAmount,
+      });
+
+      if (success) {
+        setIsEditingOrder(false);
+        setViewingOrder(null);
+        // Refresh orders list
+        loadData();
+        alert('Order updated successfully!');
+      } else {
+        setErrorMessage('Failed to update the order. Please try again.');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setErrorMessage(err.message || 'An error occurred while updating the order.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const loadData = async () => {
     setIsLoading(true);
@@ -575,7 +653,7 @@ export default function ProfileView({
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 text-xs text-gray-700">
           <div onClick={() => setViewingOrder(null)} className="absolute inset-0 bg-black/60 backdrop-blur-xs" />
           <div className="relative bg-white w-full max-w-sm rounded-3xl shadow-2xl flex flex-col max-h-[80vh] overflow-hidden animate-scale-up border border-gray-100">
-            {/* Modal Header */}
+            {/* Standard Modal Header */}
             <div className="bg-[#1e7e34] text-white px-6 py-4 flex items-center justify-between shadow-sm">
               <div>
                 <h3 className="text-sm font-extrabold">Order Summary</h3>
@@ -589,7 +667,7 @@ export default function ProfileView({
               </button>
             </div>
 
-            {/* Modal Body */}
+            {/* Standard Modal Body */}
             <div className="flex-1 overflow-y-auto p-5 space-y-4">
               {/* Order Info */}
               <div className="bg-gray-50 rounded-2xl p-3.5 space-y-1.5 border border-gray-100/50">
@@ -663,11 +741,24 @@ export default function ProfileView({
               </div>
             </div>
 
-            {/* Modal Footer */}
+            {/* Standard Modal Footer */}
             <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+              {isOrderEditable(viewingOrder) && (
+                <button
+                  onClick={() => {
+                    if (onModifyOrder) {
+                      onModifyOrder(viewingOrder);
+                    }
+                    setViewingOrder(null);
+                  }}
+                  className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all shadow-md active:scale-95 mr-2 cursor-pointer"
+                >
+                  Modify Order
+                </button>
+              )}
               <button
                 onClick={() => setViewingOrder(null)}
-                className="bg-[#1e7e34] hover:bg-[#155a24] text-white font-bold text-xs px-6 py-2.5 rounded-xl transition-all shadow-md active:scale-95 animate-fade-in"
+                className="bg-[#1e7e34] hover:bg-[#155a24] text-white font-bold text-xs px-6 py-2.5 rounded-xl transition-all shadow-md active:scale-95 animate-fade-in cursor-pointer"
               >
                 Close
               </button>

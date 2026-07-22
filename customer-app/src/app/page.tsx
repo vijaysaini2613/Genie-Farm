@@ -10,7 +10,7 @@ import AddressModal from '../components/AddressModal';
 import CheckoutModal from '../components/CheckoutModal';
 import ProductDetailsModal from '../components/ProductDetailsModal';
 import ProfileView from '../components/ProfileView';
-import { Product, Address, dbService, BillingConfig, Coupon, Category, supabase } from '../utils/db';
+import { Product, Address, dbService, BillingConfig, Coupon, Category, supabase, Order } from '../utils/db';
 import LoginView from '../components/LoginView';
 import { ShoppingBag, ArrowRight, Sparkles, Gift, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -310,6 +310,7 @@ export default function Home() {
 
   // Cart state
   const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const isCartLoaded = useRef(false);
   const lastLoadedUserPhone = useRef<string>('');
   const lastCartModifiedRef = useRef<number>(0);
@@ -889,16 +890,46 @@ export default function Home() {
     setCart([]); // Clear cart immediately
     setAppliedCoupon(null); // Clear coupon
     setOrderPlacedSuccess(true);
+    setEditingOrder(null);
     setProfileRefreshTrigger((prev) => prev + 1); // Refresh profile orders list
     loadDynamicData(); // Refresh products and dynamic configuration immediately
   };
 
   const handleOrderSuccess = () => {
     setCart([]); // Clear cart
+    setEditingOrder(null);
     setProfileRefreshTrigger((prev) => prev + 1); // Refresh profile orders list
     setActiveTab('home'); // Switch to home tab
     setOrderPlacedSuccess(false);
     loadDynamicData(); // Refresh products and dynamic configuration immediately
+  };
+
+  const handleModifyOrder = (order: Order) => {
+    // Map order items to product objects in the store
+    const cartItems = order.items.map(item => {
+      const foundProd = products.find(p => p.id === item.product_id);
+      if (foundProd) {
+        return { product: foundProd, quantity: item.quantity };
+      }
+      return {
+        product: {
+          id: item.product_id,
+          name: item.product_name,
+          price: item.price,
+          mrp: item.price,
+          category: 'Vegetables',
+          unit: '1 unit',
+          image_url: '',
+          stock: 9999,
+          is_available: true,
+          description: '',
+        } as Product,
+        quantity: item.quantity
+      };
+    });
+    setCart(cartItems);
+    setEditingOrder(order);
+    setActiveTab('home');
   };
 
   // Calculations
@@ -958,6 +989,23 @@ export default function Home() {
 
       {/* 2. Main Scrollable Container */}
       <main ref={mainRef} className="flex-1 overflow-y-auto pb-20 md:pb-6 w-full max-w-[1400px] mx-auto px-2 md:px-8 mt-4">
+        {editingOrder && (
+          <div className="bg-amber-500 text-white text-xs font-bold py-3 px-4 flex justify-between items-center rounded-2xl shadow-md border border-amber-600/30 mb-4 animate-pulse shrink-0">
+            <div className="flex items-center space-x-2">
+              <span>✏️</span>
+              <span>You are modifying <strong>Order #{editingOrder.id}</strong>. Add/remove items on the home page, then checkout to save changes.</span>
+            </div>
+            <button
+              onClick={() => {
+                setEditingOrder(null);
+                setCart([]);
+              }}
+              className="bg-amber-700 hover:bg-amber-800 text-white font-extrabold px-3 py-1 rounded-xl cursor-pointer ml-3 shrink-0"
+            >
+              Cancel Edit
+            </button>
+          </div>
+        )}
         {activeTab === 'home' ? (
           <div className="px-1 py-4 space-y-5">
             {/* Promo Discount Card Banner */}
@@ -1178,6 +1226,7 @@ export default function Home() {
               cart={cart}
               onAddToCart={handleAddToCart}
               onRemoveFromCart={handleRemoveFromCart}
+              onModifyOrder={handleModifyOrder}
             />
           ) : (
             <LoginView onLoginSuccess={(user) => setCurrentUser(user)} onBack={() => setActiveTab('home')} />
@@ -1321,6 +1370,7 @@ export default function Home() {
         setAppliedCoupon={setAppliedCoupon}
         currentUser={currentUser}
         onLoginTrigger={(user) => setCurrentUser(user)}
+        editingOrder={editingOrder}
       />
 
       {/* 8. Product Detailed view modal */}

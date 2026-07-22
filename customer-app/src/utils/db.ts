@@ -426,6 +426,36 @@ export const dbService = {
     }
   },
 
+  async updateOrder(orderId: string, orderData: {
+    items: {
+      product_id: string;
+      product_name: string;
+      quantity: number;
+      price: number;
+    }[];
+    total_amount: number;
+    discount_amount: number;
+    delivery_fee: number;
+    platform_fee: number;
+    final_amount: number;
+  }): Promise<boolean> {
+    try {
+      const res = await localFetch('/api/db', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update_order', data: { orderId, ...orderData } })
+      });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.error || `API returned status ${res.status}`);
+      }
+      return res.ok;
+    } catch (err) {
+      console.error('API updateOrder failed:', err);
+      throw err;
+    }
+  },
+
   // BILLING CONFIGS
   async getBillingConfig(): Promise<BillingConfig> {
     if (supabase) {

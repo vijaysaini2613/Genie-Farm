@@ -399,6 +399,123 @@ export async function POST(request: Request) {
             return NextResponse.json(updated, { headers: getCorsHeaders() });
           }
 
+          case 'update_order': {
+            const { orderId, items, total_amount, discount_amount, delivery_fee, platform_fee, final_amount } = data;
+
+            // 1. Fetch existing order and items
+            const { data: existingOrder, error: orderFetchErr } = await supabase
+              .from('orders')
+              .select('*, order_items(*)')
+              .eq('id', orderId)
+              .single();
+            if (orderFetchErr || !existingOrder) {
+              return NextResponse.json({ error: 'Order not found' }, { status: 404, headers: getCorsHeaders() });
+            }
+
+            // Check if deadline has passed (till midnight of same day)
+            const createdDate = new Date(existingOrder.created_at);
+            const now = new Date();
+            const deadline = new Date(createdDate);
+            deadline.setDate(deadline.getDate() + 1);
+            deadline.setHours(0, 0, 0, 0);
+            if (now >= deadline) {
+              return NextResponse.json({ error: 'Orders can only be updated before 12:00 AM of the day they were placed.' }, { status: 400, headers: getCorsHeaders() });
+            }
+
+            // 2. Perform inventory check (compare old items quantity with new items quantity)
+            const oldItems = existingOrder.order_items || [];
+            
+            // Fetch all products in the new order items to check their current stock levels
+            const productIds = items.map((item: any) => item.product_id);
+            const { data: dbProducts, error: dbProductsError } = await supabase
+              .from('products')
+              .select('id, name, stock')
+              .in('id', productIds);
+
+            if (dbProductsError || !dbProducts) {
+              return NextResponse.json({ error: 'Failed to validate product inventory levels.' }, { status: 500, headers: getCorsHeaders() });
+            }
+
+            // Verify stock for each item
+            for (const newItem of items) {
+              const oldItem = oldItems.find((x: any) => x.product_id === newItem.product_id);
+              const oldQty = oldItem ? oldItem.quantity : 0;
+              const netChange = newItem.quantity - oldQty;
+
+              if (netChange > 0) {
+                const p = dbProducts.find((x: any) => x.id === newItem.product_id);
+                if (!p) {
+                  return NextResponse.json({ error: `Product "${newItem.product_name}" was not found.` }, { status: 400, headers: getCorsHeaders() });
+                }
+                if (p.stock < netChange) {
+                  return NextResponse.json({ error: `Insufficient stock for "${p.name}". Only ${p.stock} additional units are available.` }, { status: 400, headers: getCorsHeaders() });
+                }
+              }
+            }
+
+            // 3. Handle wallet refund/deduction if payment method was WALLET
+            if (existingOrder.payment_method === 'WALLET') {
+              const diff = parseFloat(final_amount) - parseFloat(existingOrder.final_amount);
+              if (diff !== 0) {
+                const { data: config } = await supabase.from('config').select('wallet_balance').eq('id', 1).single();
+                const curBal = config?.wallet_balance || 0;
+                
+                if (diff > 0 && curBal < diff) {
+                  return NextResponse.json({ error: `Insufficient wallet balance to cover the difference of ₹${diff.toFixed(2)}. Please recharge your wallet.` }, { status: 400, headers: getCorsHeaders() });
+                }
+                
+                const nextBal = curBal - diff;
+                await supabase.from('config').update({ wallet_balance: nextBal }).eq('id', 1);
+              }
+            }
+
+            // 4. Update the order row
+            const { error: updateOrderErr } = await supabase
+              .from('orders')
+              .update({
+                total_amount,
+                discount_amount,
+                delivery_fee,
+                platform_fee,
+                final_amount,
+              })
+              .eq('id', orderId);
+            if (updateOrderErr) throw updateOrderErr;
+
+            // 5. Update stock levels for products: restore old stock
+            await Promise.all(oldItems.map(async (oldItem: any) => {
+              const { data: p } = await supabase.from('products').select('stock').eq('id', oldItem.product_id).single();
+              if (p) {
+                const nextStock = p.stock + oldItem.quantity;
+                await supabase.from('products').update({ stock: nextStock }).eq('id', oldItem.product_id);
+              }
+            }));
+
+            // Deduct stock for new items
+            await Promise.all(items.map(async (newItem: any) => {
+              const { data: p } = await supabase.from('products').select('stock').eq('id', newItem.product_id).single();
+              if (p) {
+                const nextStock = Math.max(0, p.stock - newItem.quantity);
+                await supabase.from('products').update({ stock: nextStock }).eq('id', newItem.product_id);
+              }
+            }));
+
+            // 6. Delete old order items and insert new ones
+            await supabase.from('order_items').delete().eq('order_id', orderId);
+            
+            const itemsToInsert = items.map((item: any) => ({
+              order_id: orderId,
+              product_id: item.product_id,
+              product_name: item.product_name,
+              quantity: item.quantity,
+              price: item.price,
+            }));
+            const { error: itemsError } = await supabase.from('order_items').insert(itemsToInsert);
+            if (itemsError) throw itemsError;
+
+            return NextResponse.json({ success: true }, { headers: getCorsHeaders() });
+          }
+
           case 'save_coupon': {
             const newCoupon = {
               ...data,
@@ -568,6 +685,94 @@ export async function POST(request: Request) {
           db.config = data;
           writeDB(db);
           return NextResponse.json(data, { headers: getCorsHeaders() });
+        }
+
+        case 'update_order': {
+          const { orderId, items, total_amount, discount_amount, delivery_fee, platform_fee, final_amount } = data;
+
+          const orderIndex = db.orders.findIndex((o: any) => o.id === orderId);
+          if (orderIndex === -1) {
+            return NextResponse.json({ error: 'Order not found' }, { status: 404, headers: getCorsHeaders() });
+          }
+
+          const existingOrder = db.orders[orderIndex];
+
+          // Check deadline (till midnight of same day)
+          const createdDate = new Date(existingOrder.created_at);
+          const now = new Date();
+          const deadline = new Date(createdDate);
+          deadline.setDate(deadline.getDate() + 1);
+          deadline.setHours(0, 0, 0, 0);
+          if (now >= deadline) {
+            return NextResponse.json({ error: 'Orders can only be updated before 12:00 AM of the day they were placed.' }, { status: 400, headers: getCorsHeaders() });
+          }
+
+          const oldItems = existingOrder.items || [];
+
+          // Verify stock levels
+          for (const newItem of items) {
+            const oldItem = oldItems.find((x: any) => x.product_id === newItem.product_id);
+            const oldQty = oldItem ? oldItem.quantity : 0;
+            const netChange = newItem.quantity - oldQty;
+
+            if (netChange > 0) {
+              const p = db.products.find((prod: any) => prod.id === newItem.product_id);
+              if (!p) {
+                return NextResponse.json({ error: `Product "${newItem.product_name}" was not found.` }, { status: 400, headers: getCorsHeaders() });
+              }
+              if (p.stock < netChange) {
+                return NextResponse.json({ error: `Insufficient stock for "${p.name}". Only ${p.stock} additional units are available.` }, { status: 400, headers: getCorsHeaders() });
+              }
+            }
+          }
+
+          // Handle wallet adjustment
+          if (existingOrder.payment_method === 'WALLET') {
+            const diff = parseFloat(final_amount) - parseFloat(existingOrder.final_amount);
+            if (diff !== 0) {
+              const curBal = db.wallet_balance || 0;
+              if (diff > 0 && curBal < diff) {
+                return NextResponse.json({ error: `Insufficient wallet balance to cover the difference of ₹${diff.toFixed(2)}. Please recharge your wallet.` }, { status: 400, headers: getCorsHeaders() });
+              }
+              db.wallet_balance = curBal - diff;
+            }
+          }
+
+          // Adjust product stocks: restore old stock
+          oldItems.forEach((oldItem: any) => {
+            const p = db.products.find((prod: any) => prod.id === oldItem.product_id);
+            if (p) {
+              p.stock += oldItem.quantity;
+            }
+          });
+
+          // Adjust product stocks: deduct new stock
+          items.forEach((newItem: any) => {
+            const p = db.products.find((prod: any) => prod.id === newItem.product_id);
+            if (p) {
+              p.stock = Math.max(0, p.stock - newItem.quantity);
+            }
+          });
+
+          // Update the order details
+          db.orders[orderIndex] = {
+            ...existingOrder,
+            total_amount,
+            discount_amount,
+            delivery_fee,
+            platform_fee,
+            final_amount,
+            items: items.map((item: any) => ({
+              id: item.id || 'item-' + Math.random(),
+              product_id: item.product_id,
+              product_name: item.product_name,
+              quantity: item.quantity,
+              price: item.price,
+            }))
+          };
+
+          writeDB(db);
+          return NextResponse.json({ success: true }, { headers: getCorsHeaders() });
         }
 
         case 'save_coupon': {
