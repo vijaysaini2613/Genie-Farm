@@ -456,6 +456,24 @@ export const dbService = {
     }
   },
 
+  async cancelOrder(orderId: string): Promise<boolean> {
+    try {
+      const res = await localFetch('/api/db', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'cancel_order', data: { orderId } })
+      });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.error || `API returned status ${res.status}`);
+      }
+      return res.ok;
+    } catch (err) {
+      console.error('API cancelOrder failed:', err);
+      throw err;
+    }
+  },
+
   // BILLING CONFIGS
   async getBillingConfig(): Promise<BillingConfig> {
     if (supabase) {

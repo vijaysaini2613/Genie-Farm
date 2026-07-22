@@ -145,6 +145,29 @@ export default function ProfileView({
     setIsLoading(false);
   };
 
+  const handleCancelClick = async (orderId: string) => {
+    if (!window.confirm('Are you sure you want to cancel this order? This will release stock and refund any wallet payment.')) {
+      return;
+    }
+    
+    setIsSaving(true);
+    try {
+      const ok = await dbService.cancelOrder(orderId);
+      if (ok) {
+        alert('Order cancelled successfully!');
+        setViewingOrder(null);
+        await loadData();
+      } else {
+        alert('Failed to cancel order.');
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || 'Error cancelling order.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   useEffect(() => {
     loadData();
   }, [onRefreshOrdersTrigger, currentUser]);
@@ -744,21 +767,32 @@ export default function ProfileView({
             {/* Standard Modal Footer */}
             <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
               {isOrderEditable(viewingOrder) && (
-                <button
-                  onClick={() => {
-                    if (onModifyOrder) {
-                      onModifyOrder(viewingOrder);
-                    }
-                    setViewingOrder(null);
-                  }}
-                  className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all shadow-md active:scale-95 mr-2 cursor-pointer"
-                >
-                  Modify Order
-                </button>
+                <>
+                  <button
+                    disabled={isSaving}
+                    onClick={() => handleCancelClick(viewingOrder.id)}
+                    className="bg-red-500 hover:bg-red-600 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all shadow-md active:scale-95 mr-2 cursor-pointer disabled:opacity-50"
+                  >
+                    {isSaving ? 'Cancelling...' : 'Cancel Order'}
+                  </button>
+                  <button
+                    disabled={isSaving}
+                    onClick={() => {
+                      if (onModifyOrder) {
+                        onModifyOrder(viewingOrder);
+                      }
+                      setViewingOrder(null);
+                    }}
+                    className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all shadow-md active:scale-95 mr-2 cursor-pointer disabled:opacity-50"
+                  >
+                    Modify Order
+                  </button>
+                </>
               )}
               <button
+                disabled={isSaving}
                 onClick={() => setViewingOrder(null)}
-                className="bg-[#1e7e34] hover:bg-[#155a24] text-white font-bold text-xs px-6 py-2.5 rounded-xl transition-all shadow-md active:scale-95 animate-fade-in cursor-pointer"
+                className="bg-[#1e7e34] hover:bg-[#155a24] text-white font-bold text-xs px-6 py-2.5 rounded-xl transition-all shadow-md active:scale-95 animate-fade-in cursor-pointer disabled:opacity-50"
               >
                 Close
               </button>

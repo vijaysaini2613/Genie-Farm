@@ -399,6 +399,66 @@ export async function POST(request: Request) {
             return NextResponse.json(updated, { headers: getCorsHeaders() });
           }
 
+          case 'cancel_order': {
+            const { orderId } = data;
+
+            // 1. Fetch order and its items
+            const { data: existingOrder, error: orderFetchErr } = await supabase
+              .from('orders')
+              .select('*, order_items(*)')
+              .eq('id', orderId)
+              .single();
+            
+            if (orderFetchErr || !existingOrder) {
+              return NextResponse.json({ error: 'Order not found' }, { status: 404, headers: getCorsHeaders() });
+            }
+
+            // Check if already cancelled or delivered
+            if (existingOrder.delivery_status === 'Cancelled') {
+              return NextResponse.json({ error: 'Order is already cancelled' }, { status: 400, headers: getCorsHeaders() });
+            }
+            if (existingOrder.delivery_status === 'Delivered') {
+              return NextResponse.json({ error: 'Delivered orders cannot be cancelled' }, { status: 400, headers: getCorsHeaders() });
+            }
+
+            // Check deadline (till midnight of same day)
+            const createdDate = new Date(existingOrder.created_at);
+            const now = new Date();
+            const deadline = new Date(createdDate);
+            deadline.setDate(deadline.getDate() + 1);
+            deadline.setHours(0, 0, 0, 0);
+            if (now >= deadline) {
+              return NextResponse.json({ error: 'Orders can only be cancelled before 12:00 AM of the day they were placed.' }, { status: 400, headers: getCorsHeaders() });
+            }
+
+            // 2. Refund wallet if paid by WALLET
+            if (existingOrder.payment_method === 'WALLET') {
+              const { data: config } = await supabase.from('config').select('wallet_balance').eq('id', 1).single();
+              const curBal = config?.wallet_balance || 0;
+              const nextBal = curBal + parseFloat(existingOrder.final_amount);
+              await supabase.from('config').update({ wallet_balance: nextBal }).eq('id', 1);
+            }
+
+            // 3. Update order status to 'Cancelled'
+            const { error: updateOrderErr } = await supabase
+              .from('orders')
+              .update({ delivery_status: 'Cancelled' })
+              .eq('id', orderId);
+            if (updateOrderErr) throw updateOrderErr;
+
+            // 4. Restore stock for order items
+            const orderItems = existingOrder.order_items || [];
+            await Promise.all(orderItems.map(async (item: any) => {
+              const { data: p } = await supabase.from('products').select('stock').eq('id', item.product_id).single();
+              if (p) {
+                const nextStock = p.stock + item.quantity;
+                await supabase.from('products').update({ stock: nextStock }).eq('id', item.product_id);
+              }
+            }));
+
+            return NextResponse.json({ success: true }, { headers: getCorsHeaders() });
+          }
+
           case 'update_order': {
             const { orderId, items, total_amount, discount_amount, delivery_fee, platform_fee, final_amount } = data;
 
@@ -685,6 +745,56 @@ export async function POST(request: Request) {
           db.config = data;
           writeDB(db);
           return NextResponse.json(data, { headers: getCorsHeaders() });
+        }
+
+        case 'cancel_order': {
+          const { orderId } = data;
+
+          const orderIndex = db.orders.findIndex((o: any) => o.id === orderId);
+          if (orderIndex === -1) {
+            return NextResponse.json({ error: 'Order not found' }, { status: 404, headers: getCorsHeaders() });
+          }
+
+          const existingOrder = db.orders[orderIndex];
+
+          // Check status
+          if (existingOrder.delivery_status === 'Cancelled') {
+            return NextResponse.json({ error: 'Order is already cancelled' }, { status: 400, headers: getCorsHeaders() });
+          }
+          if (existingOrder.delivery_status === 'Delivered') {
+            return NextResponse.json({ error: 'Delivered orders cannot be cancelled' }, { status: 400, headers: getCorsHeaders() });
+          }
+
+          // Check deadline
+          const createdDate = new Date(existingOrder.created_at);
+          const now = new Date();
+          const deadline = new Date(createdDate);
+          deadline.setDate(deadline.getDate() + 1);
+          deadline.setHours(0, 0, 0, 0);
+          if (now >= deadline) {
+            return NextResponse.json({ error: 'Orders can only be cancelled before 12:00 AM of the day they were placed.' }, { status: 400, headers: getCorsHeaders() });
+          }
+
+          // Refund wallet if WALLET
+          if (existingOrder.payment_method === 'WALLET') {
+            const curBal = db.wallet_balance || 0;
+            db.wallet_balance = curBal + parseFloat(existingOrder.final_amount);
+          }
+
+          // Restore stock
+          const orderItems = existingOrder.items || [];
+          orderItems.forEach((item: any) => {
+            const p = db.products.find((prod: any) => prod.id === item.product_id);
+            if (p) {
+              p.stock += item.quantity;
+            }
+          });
+
+          // Set status to Cancelled
+          db.orders[orderIndex].delivery_status = 'Cancelled';
+
+          writeDB(db);
+          return NextResponse.json({ success: true }, { headers: getCorsHeaders() });
         }
 
         case 'update_order': {
