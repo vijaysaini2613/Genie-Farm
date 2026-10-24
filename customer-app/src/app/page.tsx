@@ -1,5 +1,9 @@
 'use client';
 
+// ─── SHOP STATUS ─────────────────────────────────────────────────────────────
+// Set to false to re-open the shop
+const SHOP_CLOSED = true;
+
 import React, { useState, useEffect, useRef } from 'react';
 import Header from '../components/Header';
 import FooterNav, { TabType } from '../components/FooterNav';
@@ -295,6 +299,196 @@ export const validateCartItems = (
       return true;
     });
 };
+
+function ShopClosedScreen() {
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center px-5"
+      style={{
+        background: 'linear-gradient(135deg, #0a2e1a 0%, #0f3d22 40%, #0d2b19 100%)',
+      }}
+    >
+      {/* Subtle radial glow */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -60%)',
+          width: '600px',
+          height: '600px',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(34,197,94,0.12) 0%, transparent 70%)',
+          pointerEvents: 'none',
+        }}
+      />
+
+      {/* Card */}
+      <div
+        style={{
+          background: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: '24px',
+          padding: '48px 36px',
+          maxWidth: '420px',
+          width: '100%',
+          textAlign: 'center',
+          backdropFilter: 'blur(20px)',
+          boxShadow: '0 40px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)',
+          position: 'relative',
+        }}
+      >
+        {/* Top accent line */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '80px',
+            height: '3px',
+            borderRadius: '0 0 4px 4px',
+            background: 'linear-gradient(90deg, #22c55e, #16a34a)',
+          }}
+        />
+
+        {/* Icon ring */}
+        <div
+          style={{
+            margin: '0 auto 28px',
+            width: '72px',
+            height: '72px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #22c55e22, #16a34a11)',
+            border: '1.5px solid rgba(34,197,94,0.35)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="rgba(34,197,94,0.9)" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+
+        {/* Brand label */}
+        <p
+          style={{
+            fontSize: '10px',
+            fontWeight: 700,
+            letterSpacing: '3px',
+            textTransform: 'uppercase',
+            color: '#22c55e',
+            marginBottom: '12px',
+          }}
+        >
+          Genie Farm
+        </p>
+
+        {/* Heading */}
+        <h1
+          style={{
+            fontSize: '26px',
+            fontWeight: 800,
+            color: '#ffffff',
+            marginBottom: '14px',
+            lineHeight: 1.25,
+            letterSpacing: '-0.5px',
+          }}
+        >
+          Temporarily Closed
+        </h1>
+
+        {/* Divider */}
+        <div
+          style={{
+            width: '40px',
+            height: '2px',
+            background: 'linear-gradient(90deg, #22c55e, #16a34a)',
+            borderRadius: '2px',
+            margin: '0 auto 20px',
+          }}
+        />
+
+        {/* Body text */}
+        <p
+          style={{
+            fontSize: '14px',
+            color: 'rgba(255,255,255,0.6)',
+            lineHeight: 1.75,
+            marginBottom: '32px',
+            fontWeight: 400,
+          }}
+        >
+          We apologize for the inconvenience. Our store is temporarily closed for scheduled maintenance.
+          We will be back shortly with the freshest produce, just for you.
+        </p>
+
+        {/* Status badge */}
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: 'rgba(34,197,94,0.1)',
+            border: '1px solid rgba(34,197,94,0.25)',
+            borderRadius: '100px',
+            padding: '8px 20px',
+            marginBottom: '32px',
+          }}
+        >
+          <span
+            style={{
+              width: '7px',
+              height: '7px',
+              borderRadius: '50%',
+              background: '#f97316',
+              display: 'inline-block',
+              boxShadow: '0 0 0 3px rgba(249,115,22,0.25)',
+              animation: 'pulse 2s infinite',
+            }}
+          />
+          <span
+            style={{
+              fontSize: '12px',
+              fontWeight: 600,
+              color: 'rgba(255,255,255,0.75)',
+              letterSpacing: '0.3px',
+            }}
+          >
+            Back soon — stay tuned
+          </span>
+        </div>
+
+        {/* Footer */}
+        <p
+          style={{
+            fontSize: '11px',
+            color: 'rgba(255,255,255,0.3)',
+            borderTop: '1px solid rgba(255,255,255,0.06)',
+            paddingTop: '20px',
+            letterSpacing: '0.3px',
+          }}
+        >
+          Thank you for your patience &mdash; The Genie Farm Team
+        </p>
+      </div>
+
+      {/* Bottom watermark */}
+      <p
+        style={{
+          marginTop: '32px',
+          fontSize: '11px',
+          color: 'rgba(255,255,255,0.2)',
+          letterSpacing: '1px',
+          textTransform: 'uppercase',
+        }}
+      >
+        geniefarm.shop
+      </p>
+    </div>
+  );
+}
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
@@ -965,6 +1159,8 @@ export default function Home() {
     return true;
   });
 
+  if (SHOP_CLOSED) return <ShopClosedScreen />;
+
   return (
     <div className="flex-1 flex flex-col bg-gray-50 min-h-screen text-gray-800">
 
@@ -1410,3 +1606,4 @@ export default function Home() {
     </div>
   );
 }
+
